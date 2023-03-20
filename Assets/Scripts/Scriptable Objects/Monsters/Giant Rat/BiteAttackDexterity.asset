@@ -10,13 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b052dc24b24e28428f26946b24a091a, type: 3}
-  m_Name: BiteAttack
+  m_Name: BiteAttackDexterity
   m_EditorClassIdentifier: 
   _name: Bite attack
-  _identifier: 1
-  _damageDice: 04000000
-  _numberOfDamageDice: 01000000
-  _damageTypes: 08000000
+  _identifier: 2
   _usedAbility: 2
+  _initialDamageInfo:
+    <DamageDie>k__BackingField: 4
+    <NumberOfDamageDice>k__BackingField: 1
+    <DamageType>k__BackingField: 8
   _isAbilityModifierAdded: 1
+  _additionalDamageInfo: []
   _reach: 5

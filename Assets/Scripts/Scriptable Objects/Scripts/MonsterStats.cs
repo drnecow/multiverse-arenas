@@ -47,6 +47,7 @@ public class MonsterStats : ScriptableObject
 
 
     // DATA MANAGEMENT PROPERTIES AND FUNCTIONS
+    public string Name { get => _name; set => _name = value; }
 
     public int ProficiencyBonus
     {
@@ -240,5 +241,23 @@ public class MonsterStats : ScriptableObject
         int newHitPoints = Dice.RollDice(_hitDie, _numberOfHitDice) + Abilities.GetAbilityModifier(Ability.Constitution) * _numberOfHitDice;
 
         SetMaxHPAndCurrentHP(newHitPoints);
+    }
+    public int GetSkillModifier(Skill skill)
+    {
+        int skillModifier = skill switch
+        {
+            Skill.Athletics => Abilities.GetAbilityModifier(Ability.Strength) + SkillProficiencies.GetSkillProficiencyBonus(_proficiencyBonus, Skill.Athletics),
+            Skill.Acrobatics => Abilities.GetAbilityModifier(Ability.Dexterity) + SkillProficiencies.GetSkillProficiencyBonus(_proficiencyBonus, Skill.Acrobatics),
+            Skill.Perception => Abilities.GetAbilityModifier(Ability.Wisdom) + SkillProficiencies.GetSkillProficiencyBonus(_proficiencyBonus, Skill.Perception),
+            Skill.Stealth => Abilities.GetAbilityModifier(Ability.Dexterity) + SkillProficiencies.GetSkillProficiencyBonus(_proficiencyBonus, Skill.Stealth),
+            Skill.Performance => Abilities.GetAbilityModifier(Ability.Charisma) + SkillProficiencies.GetSkillProficiencyBonus(_proficiencyBonus, Skill.Performance),
+            _ => 0
+        };
+
+        return skillModifier;
+    }
+    public int GetSavingThrowBonus(Ability ability)
+    {
+        return Abilities.GetAbilityModifier(ability) + (SaveProficiencies.IsProficientInSavesOf(ability) ? _proficiencyBonus : 0);
     }
 }

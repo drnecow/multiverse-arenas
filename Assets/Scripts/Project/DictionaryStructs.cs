@@ -16,70 +16,70 @@ namespace Project.DictionaryStructs
         [SerializeField] private int _charisma;
 
         public int Strength
+        {
+            get => _strength;
+            set
             {
-                get { return _strength; }
-                set
-                {
-                    if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
-                        _strength = value;
-                    else
-                        Debug.LogWarning($"Invalid strength value: {value}");
-                }
+                if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
+                    _strength = value;
+                else
+                    Debug.LogWarning($"Invalid strength value: {value}");
             }
+        }
         public int Dexterity
+        {
+            get => _dexterity;
+            set
             {
-                get { return _dexterity; }
-                set
-                {
-                    if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
-                        _dexterity = value;
-                    else
-                        Debug.LogWarning($"Invalid dexterity value: {value}");
-                }
+                if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
+                    _dexterity = value;
+                else
+                    Debug.LogWarning($"Invalid dexterity value: {value}");
             }
+        }
         public int Constitution
+        {
+            get => _constitution;
+            set
             {
-                get { return _constitution; }
-                set
-                {
-                    if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
-                        _constitution = value;
-                    else
-                        Debug.LogWarning($"Invalid constitution value: {value}");
-                }
+                if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
+                    _constitution = value;
+                else
+                    Debug.LogWarning($"Invalid constitution value: {value}");
             }
+        }
         public int Intelligence
+        {
+            get => _intelligence;
+            set
             {
-                get { return _intelligence; }
-                set
-                {
-                    if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
-                        _intelligence = value;
-                    else
-                        Debug.LogWarning($"Invalid intelligence value: {value}");
-                }
+                if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
+                    _intelligence = value;
+                else
+                    Debug.LogWarning($"Invalid intelligence value: {value}");
             }
+        }
         public int Wisdom
+        {
+            get => _wisdom;
+            set
             {
-                get { return _wisdom; }
-                set
-                {
-                    if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
-                        _wisdom = value;
-                    else
-                        Debug.LogWarning($"Invalid wisdom value: {value}");
-                }
+                if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
+                    _wisdom = value;
+                else
+                    Debug.LogWarning($"Invalid wisdom value: {value}");
             }
+        }
         public int Charisma
+        {
+            get => _charisma;
+            set
             {
-                get { return _charisma; }
-                set
-                {
-                    if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
-                        _charisma = value;
-                    else
-                        Debug.LogWarning($"Invalid charisma value: {value}");
-                }
+                if (value >= 0 && value <= ConstantValues.MAX_ABILITY_VALUE)
+                    _charisma = value;
+                else
+                    Debug.LogWarning($"Invalid charisma value: {value}");
+            }
         }
 
         public int GetAbilityModifier(Ability ability)
@@ -113,6 +113,30 @@ namespace Project.DictionaryStructs
         public ProficiencyType Perception { get => _perception; set => _perception = value; }
         public ProficiencyType Stealth { get => _stealth; set => _stealth = value; }
         public ProficiencyType Performance { get => _performance; set => _performance = value; }
+
+        public int GetSkillProficiencyBonus(int monsterProficiencyBonus, Skill skill)
+        {
+            ProficiencyType targetSkillProficiency = skill switch
+            {
+                Skill.Athletics => _athletics,
+                Skill.Acrobatics => _acrobatics,
+                Skill.Perception => _perception,
+                Skill.Stealth => _stealth,
+                Skill.Performance => _performance,
+                _ => 0
+            };
+
+            int skillProficiencyBonus = targetSkillProficiency switch
+            {
+                ProficiencyType.None => 0,
+                ProficiencyType.Half => monsterProficiencyBonus / 2,
+                ProficiencyType.Normal => monsterProficiencyBonus,
+                ProficiencyType.Expertise => monsterProficiencyBonus * 2,
+                _ => 0
+            };
+
+            return skillProficiencyBonus;
+        }
     }
 
     [System.Serializable]
@@ -125,12 +149,22 @@ namespace Project.DictionaryStructs
         [SerializeField] private bool _wisdom;
         [SerializeField] private bool _charisma;
 
-        public bool Strength { get => _strength; set => _strength = value; }
-        public bool Dexterity { get => _dexterity; set => _dexterity = value; }
-        public bool Constitution { get => _constitution; set => _constitution = value; }
-        public bool Intelligence { get => _intelligence; set => _intelligence = value; }
-        public bool Wisdom { get => _wisdom; set => _wisdom = value; }
-        public bool Charisma { get => _charisma; set => _charisma = value; }
+
+        public bool IsProficientInSavesOf(Ability ability)
+        {
+            bool isProficient = ability switch
+            {
+                Ability.Strength => _strength,
+                Ability.Dexterity => _dexterity,
+                Ability.Constitution => _constitution,
+                Ability.Intelligence => _intelligence,
+                Ability.Wisdom => _wisdom,
+                Ability.Charisma => _charisma,
+                _ => false
+            };
+
+            return isProficient;
+        }
     }
 
     [System.Serializable]

@@ -142,7 +142,8 @@ namespace Project.Constants
 
     public enum AttackName
     {
-        BiteAttack = 1
+        UnarmedAttack = 1,
+        BiteAttack = 2
     }
 
     public static class ConstantValues
