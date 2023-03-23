@@ -231,6 +231,22 @@ namespace Project.DictionaryStructs
                     _burrow = 0;
             }
         }
+
+
+        public int GetSpeedCells(Speed speed)
+        {
+            int targetSpeed = speed switch
+            {
+                Speed.Walk => _walk,
+                Speed.Fly => _fly,
+                Speed.Swim => _swim,
+                Speed.Climb => _climb,
+                Speed.Burrow => _burrow,
+                _ => 0
+            };
+
+            return targetSpeed / 5;
+        }
     }
 
     [System.Serializable]

@@ -7,6 +7,7 @@ using Project.Dice;
 public class MeleeAttack : Attack
 {
     [SerializeField] private int _reach;
+    public int Reach { get => _reach; }
 
     public void MakeMeleeAttack(Monster actor, Monster target)
     {

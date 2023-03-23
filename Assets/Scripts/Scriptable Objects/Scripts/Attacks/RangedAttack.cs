@@ -9,6 +9,10 @@ public class RangedAttack : Attack
     [SerializeField] private int _normalRange;
     [SerializeField] private int _disadvantageRange;
 
+    public int NormalRange { get => _normalRange; }
+    public int DisadvantageRange { get => _disadvantageRange; }
+
+
     public void MakeRangedAttack(Monster actor, Monster target, int feetToTarget)
     {
         // Resolve advantage and disadvantage applied to ranged attack

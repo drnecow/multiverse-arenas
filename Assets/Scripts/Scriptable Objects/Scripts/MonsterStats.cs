@@ -9,8 +9,6 @@ using Project.Dice;
 [CreateAssetMenu(fileName = "MonsterStats", menuName = "Scriptable Objects/Monster Stats")]
 public class MonsterStats : ScriptableObject
 {
-    [SerializeField] private string _name = "Unspecified Monster";
-
     [field: SerializeField] public Abilities Abilities { get; private set; }
     [SerializeField] private int _proficiencyBonus;
     [field: SerializeField] public SkillProficiencies SkillProficiencies { get; private set; }
@@ -47,8 +45,6 @@ public class MonsterStats : ScriptableObject
 
 
     // DATA MANAGEMENT PROPERTIES AND FUNCTIONS
-    public string Name { get => _name; set => _name = value; }
-
     public int ProficiencyBonus
     {
         get => _proficiencyBonus;

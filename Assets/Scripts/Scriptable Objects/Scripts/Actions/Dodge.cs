@@ -9,7 +9,12 @@ public class Dodge : CombatAction
     private void Awake()
     {
         _name = "Dodge";
-        _identifier = CombatActionName.Dodge;
+        Identifier = CombatActionType.Dodge;
+    }
+
+    public override void DoAction(Monster actor)
+    {
+        Debug.Log($"{actor.Name} is Dodging");
     }
 }
 

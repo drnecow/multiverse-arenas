@@ -15,7 +15,7 @@ public struct AttackDamageInfo
 public abstract class Attack : ScriptableObject
 {
     [SerializeField] protected string _name = "Unspecified attack";
-    [SerializeField] protected AttackName _identifier;
+    [field: SerializeField] public AttackType Identifier { get; protected set; }
     [SerializeField] protected Ability _usedAbility;
     [SerializeField] protected AttackDamageInfo _initialDamageInfo;
     [SerializeField] protected bool _isAbilityModifierAdded;
@@ -23,6 +23,8 @@ public abstract class Attack : ScriptableObject
 
     protected void MakeAttack(Monster actor, Monster target, RollMode rollMode)
     {
+        Debug.Log($"{actor.Name} is making {_name}");
+
         // TODO: log attack name
 
         int toHitRoll = Dice.RollD20(1, rollMode);

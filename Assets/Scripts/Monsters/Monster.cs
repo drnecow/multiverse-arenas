@@ -6,20 +6,42 @@ using Project.Dice;
 
 public class Monster : MonoBehaviour
 {
-    [SerializeField] private GridMap _grid;
-    public GridMap Grid { get => _grid; set => _grid = value; }
+    [SerializeField] private bool _isPlayerControlled;
+    public bool IsPlayerControlled { get => _isPlayerControlled; set => _isPlayerControlled = value; }
 
+    [SerializeField] private GridMap _map;
+    public GridMap Map { get => _map; set => _map = value; }
+
+    [field: SerializeField] public string Name { get; private set; }
     [field: SerializeField] public MonsterStats Stats { get; private set; }
     [SerializeField] private int _numberOfAttacks;
 
-    [SerializeField] private List<CombatAction> _freeActions;
-    [SerializeField] private List<CombatAction> _mainActions;
-    [SerializeField] private List<CombatAction> _bonusActions;
-
-    [SerializeField] private MeleeAttackIntDictionary _meleeAttacks;
-    [SerializeField] private RangedAttackIntDictionary _rangedAttacks;
+    [field: SerializeField] public MonsterCombatActions CombatActions { get; private set; }
 
     public HashSet<Condition> ActiveConditions { get; private set; }
+    public void AddActiveCondition(Condition condition)
+    {
+        ActiveConditions.Add(condition);
+    }
+    public void RemoveActiveCondition(Condition condition)
+    {
+        ActiveConditions.Remove(condition);
+    }
+    public Dictionary<Condition, Monster> ConditionSourceMonsters { get; private set; }
+    public void AddConditionSourceMonster(Condition condition, Monster monster)
+    {
+        if (!ConditionSourceMonsters.ContainsKey(condition))
+            ConditionSourceMonsters[condition] = monster;
+        else
+            Debug.LogWarning($"Monster {this} already has {condition} condition source monster: {ConditionSourceMonsters[condition]}");
+    }
+    public void RemoveConditionSourceMonster(Condition condition)
+    {
+        if (ConditionSourceMonsters.ContainsKey(condition))
+            ConditionSourceMonsters.Remove(condition);
+        else
+            Debug.Log($"Monster {this} has no condition source of type {condition}");
+    }
 
     public Coords CurrentCoordsOriginCell //returns top left square of monster's position; the rest of the squares are deduced through monster's Size
     {
@@ -29,86 +51,95 @@ public class Monster : MonoBehaviour
 
             return Stats.Size switch
             {
-                Size.Tiny => _grid.WorldPositionToXY(transform.position),
-                Size.Small => _grid.WorldPositionToXY(transform.position),
-                Size.Medium => _grid.WorldPositionToXY(transform.position),
-                Size.Large => _grid.WorldPositionToXY(new Vector3(transform.position.x - cellSize/2, transform.position.y + cellSize/2)),
-                Size.Huge => _grid.WorldPositionToXY(new Vector3(transform.position.x - cellSize, transform.position.y + cellSize)),
-                Size.Gargantuan => _grid.WorldPositionToXY(new Vector3(transform.position.x - (cellSize + cellSize/2), transform.position.y + (cellSize + cellSize/2))),
-                _ => _grid.WorldPositionToXY(transform.position)
+                Size.Tiny => _map.WorldPositionToXY(transform.position),
+                Size.Small => _map.WorldPositionToXY(transform.position),
+                Size.Medium => _map.WorldPositionToXY(transform.position),
+                Size.Large => _map.WorldPositionToXY(new Vector3(transform.position.x - cellSize/2, transform.position.y + cellSize/2)),
+                Size.Huge => _map.WorldPositionToXY(new Vector3(transform.position.x - cellSize, transform.position.y + cellSize)),
+                Size.Gargantuan => _map.WorldPositionToXY(new Vector3(transform.position.x - (cellSize + cellSize/2), transform.position.y + (cellSize + cellSize/2))),
+                _ => _map.WorldPositionToXY(transform.position)
             };
         }
     }
     public List<Coords> CurrentCoords
     {
-        get => _grid.GetListOfMonsterCoords(CurrentCoordsOriginCell, Stats.Size);
-    }
-    [ContextMenu("Get current coordinates")]
-    public void GetCurrentCoords()
-    {
-        List<Coords> currentCoords = CurrentCoords;
-        string output = "";
-
-        foreach (Coords coords in currentCoords)
-        {
-            output += $"({coords.x}, {coords.y}) ";
-        }
-
-        Debug.Log(output);
-    }
-    [ContextMenu("Get neighbours with diagonals")]
-    public void GetNeighbours()
-    {
-        List<Coords> neighbours = _grid.GetNeighboursWithDiagonals(CurrentCoordsOriginCell, Stats.Size);
-        string output = "";
-
-        foreach (Coords coords in neighbours)
-        {
-            output += $"({coords.x}, {coords.y}) ";
-        }
-
-        Debug.Log(output);
+        get => _map.GetListOfMonsterCoords(CurrentCoordsOriginCell, Stats.Size);
     }
 
-    private bool _mainActionUsed = false;
-    public bool MainActionUsed { get => _mainActionUsed; set => _mainActionUsed = value; }
-    private bool _bonusActionUsed = false;
-    public bool BonusActionUsed { get => _bonusActionUsed; set => _bonusActionUsed = value; }
-    private bool _reactionUsed = false;
-    public bool ReactionUsed { get => _reactionUsed; set => _reactionUsed = value; }
 
-    public void AddActiveCondition(Condition condition)
-    {
-        ActiveConditions.Add(condition);
-    }
+    private bool _mainActionAvailable = true;
+    public bool MainActionAvailable { get => _mainActionAvailable; set => _mainActionAvailable = value; }
+    private bool _bonusActionAvailable = true;
+    public bool BonusActionAvailable { get => _bonusActionAvailable; set => _bonusActionAvailable = value; }
+    private bool _reactionAvailable = true;
+    public bool ReactionAvailable { get => _reactionAvailable; set => _reactionAvailable = value; }
 
+    [field: SerializeField] public List<Monster> VisibleTargets { get; private set; }
+    
 
     private void Awake()
     {
         ActiveConditions = new HashSet<Condition>();
     }
 
+    public bool RollSkillContest(Skill thisMonsterSkill, RollMode thisMonsterRollMode, Monster enemy, Skill enemySkill, RollMode enemyRollMode)
+    {
+        int thisMonsterSkillModifier = Stats.GetSkillModifier(thisMonsterSkill);
+        int enemySkillModifier = enemy.Stats.GetSkillModifier(enemySkill);
+
+        int thisMonsterRoll = Dice.RollD20(rollMode: thisMonsterRollMode) + thisMonsterSkillModifier;
+        int enemyRoll = Dice.RollD20(rollMode: enemyRollMode) + enemySkillModifier;
+
+        if (thisMonsterRoll >= enemyRoll)
+            return true;
+        else
+            return false;
+    }
     public void TakeDamage(int damagePoints, DamageType damageType)
     {
         if (Stats.DamageImmunities.Contains(damageType))
         {
-            Debug.Log($"{Stats.Name} is immune to {damageType} damage, so no damage to it");
+            Debug.Log($"{Name} is immune to {damageType} damage, so no damage to it");
         }
         else if (Stats.DamageResistances.Contains(damageType))
         {
-            Debug.Log($"{Stats.Name} is resistant to {damageType} damage, so half damage to it: {damagePoints / 2}");
+            Debug.Log($"{Name} is resistant to {damageType} damage, so half damage to it: {damagePoints / 2}");
             Stats.CurrentHP -= damagePoints / 2;
         }
         else if (Stats.DamageVulnerabilities.Contains(damageType))
         {
-            Debug.Log($"{Stats.Name} is vulnerable to {damageType} damage, so double damage to it: {damagePoints * 2}");
+            Debug.Log($"{Name} is vulnerable to {damageType} damage, so double damage to it: {damagePoints * 2}");
             Stats.CurrentHP -= damagePoints * 2;
         }
         else
         {
-            Debug.Log($"{Stats.Name} takes {damagePoints} points of {damageType} damage");
+            Debug.Log($"{Name} takes {damagePoints} points of {damageType} damage");
             Stats.CurrentHP -= damagePoints;
         }
+    }
+    public void EscapeGrapple(bool useAthletics)
+    {
+        if (!ConditionSourceMonsters.ContainsKey(Condition.Grappled))
+            Debug.Log($"Cannot escape grapple since {this} is not grappled");
+        
+        Debug.Log($"{Name} is trying to escape grapple");
+
+        Monster grappler = ConditionSourceMonsters[Condition.Grappled];
+
+        Skill thisMonsterSkill = useAthletics ? Skill.Athletics : Skill.Acrobatics;
+        RollMode thisMonsterRollMode = ResolveAdvantageAndDisadvantageToSkillCheck(thisMonsterSkill);
+        RollMode enemyRollMode = grappler.ResolveAdvantageAndDisadvantageToSkillCheck(Skill.Athletics);
+
+        bool success = RollSkillContest(thisMonsterSkill, thisMonsterRollMode, grappler, Skill.Athletics, enemyRollMode);
+
+        if (success)
+        {
+            RemoveActiveCondition(Condition.Grappled);
+            RemoveConditionSourceMonster(Condition.Grappled);
+            Debug.Log($"{Name} successfully escaped grapple from {grappler.Name}");
+        }
+        else
+            Debug.Log($"{Name} could not escape grapple from {grappler.Name}");
     }
 
     //TODO: implement this method
@@ -118,6 +149,11 @@ public class Monster : MonoBehaviour
     }
     //TODO: implement this method
     public RollMode ResolveAdvantageAndDisadvantageToRangedAttack(Monster target, int feetToTarget)
+    {
+        return RollMode.Normal;
+    }
+    //TODO: implement this method
+    public RollMode ResolveAdvantageAndDisadvantageToSkillCheck(Skill skill)
     {
         return RollMode.Normal;
     }

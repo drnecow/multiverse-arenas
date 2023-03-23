@@ -9,6 +9,16 @@ public class Dash : CombatAction
     private void Awake()
     {
         _name = "Dash";
-        _identifier = CombatActionName.Dash;
+        Identifier = CombatActionType.Dash;
+    }
+
+    public override void DoAction(Monster actor, List<Coords> path)
+    {
+        string pathString = "";
+
+        foreach (Coords pathCoord in path)
+            pathString += $"({pathCoord.x}, {pathCoord.y}) ";
+
+        Debug.Log($"{actor.Name} is Dashing along path {pathString}");
     }
 }

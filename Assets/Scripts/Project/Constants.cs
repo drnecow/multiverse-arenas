@@ -73,7 +73,8 @@ namespace Project.Constants
         Prone = 11,
         Restrained = 12,
         Stunned = 13,
-        Unconscious = 14
+        Unconscious = 14,
+        Dodging = 15
     }
 
     public enum DamageType
@@ -129,7 +130,7 @@ namespace Project.Constants
         PackTactics = 4
     }
 
-    public enum CombatActionName
+    public enum CombatActionType
     {
         Move = 1,
         Dash = 2,
@@ -140,7 +141,7 @@ namespace Project.Constants
         Seek = 7
     }
 
-    public enum AttackName
+    public enum AttackType
     {
         UnarmedAttack = 1,
         BiteAttack = 2

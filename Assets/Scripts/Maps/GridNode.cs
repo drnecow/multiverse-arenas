@@ -8,6 +8,9 @@ public class GridNode
     private Obstacle _obstacle = null;
 
     public bool IsFree { get => _monster == null && (_obstacle == null || _obstacle.IsPassable); }
+    public bool HasMonster { get => _monster != null; }
+    public bool HasImpassableObstacle { get => _obstacle != null && !_obstacle.IsPassable; }
+
     public Monster Monster { get => _monster; set => _monster = value; }
     public Obstacle Obstacle { get => _obstacle; set => _obstacle = value; }
 }

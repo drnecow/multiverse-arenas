@@ -9,6 +9,11 @@ public class Seek : CombatAction
     private void Awake()
     {
         _name = "Seek";
-        _identifier = CombatActionName.Seek;
+        Identifier = CombatActionType.Seek;
+    }
+
+    public override void DoAction(Monster actor)
+    {
+        Debug.Log($"{actor.Name} is Seeking");
     }
 }

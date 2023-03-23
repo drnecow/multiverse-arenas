@@ -9,6 +9,11 @@ public class Hide : CombatAction
     private void Awake()
     {
         _name = "Hide";
-        _identifier = CombatActionName.Hide;
+        Identifier = CombatActionType.Hide;
+    }
+
+    public override void DoAction(Monster actor)
+    {
+        Debug.Log($"{actor.Name} is Hiding");
     }
 }

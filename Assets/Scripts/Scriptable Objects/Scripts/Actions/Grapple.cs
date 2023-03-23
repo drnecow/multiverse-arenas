@@ -9,6 +9,11 @@ public class Grapple : CombatAction
     private void Awake()
     {
         _name = "Grapple";
-        _identifier = CombatActionName.Grapple;
+        Identifier = CombatActionType.Grapple;
+    }
+
+    public override void DoAction(Monster actor, Monster target)
+    {
+        Debug.Log($"{actor.Name} is trying to Grapple {target.Name}");
     }
 }

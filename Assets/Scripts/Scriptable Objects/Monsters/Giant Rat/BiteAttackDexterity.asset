@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BiteAttackDexterity
   m_EditorClassIdentifier: 
   _name: Bite attack
-  _identifier: 2
+  <Identifier>k__BackingField: 2
   _usedAbility: 2
   _initialDamageInfo:
     <DamageDie>k__BackingField: 4

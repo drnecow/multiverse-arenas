@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Project.Constants;
 using Project.Utils;
@@ -10,6 +11,35 @@ public struct Coords
     public int y;
 
     public static Coords Zero { get => new Coords(0, 0); }
+
+    public static bool operator ==(Coords coord1, Coords coord2)
+    {
+        return coord1.Equals(coord2);
+    }
+
+    public static bool operator !=(Coords coord1, Coords coord2)
+    {
+        return !(coord1 == coord2);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj == null)
+            return false;
+
+        if (obj is Coords)
+        {
+            Coords comparedCoords = (Coords)obj;
+            return (x == comparedCoords.x && y == comparedCoords.y);
+        }
+        else
+            return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return (x, y).GetHashCode();
+    }
 
     public Coords(int x, int y)
     {
@@ -30,6 +60,9 @@ public class GridMap : MonoBehaviour
     [SerializeField] private bool _debugViewEnabled;
     private TextMesh[,] _markupText;
     GameObject _textParent;
+
+    public int Width { get => _width; }
+    public int Height { get => _height; }
 
 
     private void Awake()
@@ -125,7 +158,23 @@ public class GridMap : MonoBehaviour
             _ => 1
         };
     }
-    public List<List<Coords>> GetNeighboursWithoutDiagonals(Coords entityOriginNode, Size entitySize)
+
+    public List<Coords> GetNeighboursForSingleCellEntity(Coords entityOriginCoords)
+    {
+        List<Coords> neighbourOffsets = new List<Coords>() { new Coords(0, -1), new Coords(-1, 0), new Coords(1, 0), new Coords(0, 1) };
+        List<Coords> neighbours = new List<Coords>();
+
+        foreach (Coords offset in neighbourOffsets)
+        {
+            Coords neighbour = new Coords(entityOriginCoords.x + offset.x, entityOriginCoords.y + offset.y);
+
+            if (ValidateCoords(neighbour))
+                neighbours.Add(neighbour);
+        }
+
+        return neighbours;
+    }
+    public List<List<Coords>> GetNeighboursForMultipleCellEntity(Coords entityOriginNode, Size entitySize)
     {
         int squareSide = GetSquareSideForEntitySize(entitySize);
         List<List<Coords>> neighbours = new List<List<Coords>>();
@@ -159,11 +208,10 @@ public class GridMap : MonoBehaviour
 
         return neighbours;
     }
-    //TODO: implement
     public List<Coords> GetNeighboursWithDiagonals(Coords entityOriginNode, Size entitySize)
     {
         int squareSide = GetSquareSideForEntitySize(entitySize);
-        List<List<Coords>> neighboursDivided = GetNeighboursWithoutDiagonals(entityOriginNode, entitySize);
+        List<List<Coords>> neighboursDivided = GetNeighboursForMultipleCellEntity(entityOriginNode, entitySize);
 
         List<Coords> neighbours = new List<Coords>();
         foreach (List<Coords> neighbourSide in neighboursDivided)
@@ -201,6 +249,8 @@ public class GridMap : MonoBehaviour
 
             foreach (Coords newCoord in newCoords)
                 GetGridObjectAtCoords(newCoord).Monster = monsterToPlace;
+
+            Debug.Log($"Monster {monsterToPlace} placed on coords with origin ({targetCoords.x}, {targetCoords.y})");
         }
         else
         {
@@ -214,9 +264,144 @@ public class GridMap : MonoBehaviour
     }
 
 
-    //TODO: implement
-    public List<GridNode> FindPath(Coords startCoords, Coords endCoords, Size entitySize)
+    public List<Coords> FindPathForSingleCellEntity(Coords startCoords, Coords endCoords, bool accountForMonsters=false)
     {
+        if (startCoords == endCoords)
+            return null;
+
+        GridNode endNode = GetGridObjectAtCoords(endCoords);
+
+        if (accountForMonsters && endNode.HasImpassableObstacle || !accountForMonsters && !endNode.IsFree)
+            return null;
+
+        Queue<Coords> frontier = new Queue<Coords>();
+        frontier.Enqueue(startCoords);
+
+        Dictionary<Coords, Coords> cameFrom = new Dictionary<Coords, Coords>();
+        cameFrom.Add(startCoords, new Coords(-1000, -1000));
+
+        while (frontier.Count > 0)
+        {
+            Coords currentCoords = frontier.Dequeue();
+
+            if (currentCoords == endCoords)
+                break;
+
+            List<Coords> neighbours = GetNeighboursForSingleCellEntity(currentCoords);
+
+            foreach (Coords neighbour in neighbours)
+            {
+                GridNode neighbourNode = GetGridObjectAtCoords(neighbour);
+
+                if (!cameFrom.ContainsKey(neighbour) && (accountForMonsters && !neighbourNode.HasImpassableObstacle || !accountForMonsters && neighbourNode.IsFree))
+                {
+                    frontier.Enqueue(neighbour);
+                    cameFrom.Add(neighbour, currentCoords);
+                }
+            }
+        }
+
+        List<Coords> path = new List<Coords>();
+        Coords currentPathCoords = endCoords;
+
+        while (currentPathCoords != startCoords)
+        {
+            if (!cameFrom.ContainsKey(currentPathCoords))
+                return null;
+
+            path.Add(currentPathCoords);
+            currentPathCoords = cameFrom[currentPathCoords];
+        }
+
+        if (accountForMonsters)
+            path.Remove(endCoords);
+
+        path.Reverse();
+        return path;
+    }
+    //TODO: implement
+    public List<List<Coords>> FindPathForMultipleCellEntity(Coords startCoords, Coords endCoords, Size entitySize)
+    {
+        /*if (startCoords == endCoords)
+            return null;
+
+        if (!GetGridObjectAtCoords(endCoords).IsFree)
+            return null;
+
+        Queue<List<Coords>> frontier = new Queue<List<Coords>>();
+
+        List<List<Coords>> startingNeighbours = GetNeighboursWithoutDiagonals(startCoords, entitySize);
+        foreach (List<Coords> neighbour in startingNeighbours)
+            if (!(neighbour.All(neighbourNode => GetGridObjectAtCoords(neighbourNode).HasMonster) || neighbour.Any(neighbourNode => GetGridObjectAtCoords(neighbourNode).HasImpassableObstacle)))
+                frontier.Enqueue(neighbour);
+        
+        Dictionary<List<Coords>, List<Coords>> cameFrom = new Dictionary<List<Coords>, List<Coords>>();
+        foreach (List<Coords> neighbour in startingNeighbours)
+            cameFrom.Add(neighbour, null);
+
+        while (frontier.Count > 0)
+        {
+            List<Coords> currentNeighbour = frontier.Dequeue();
+
+            if (currentNode == endNode)
+                break;
+
+            List<List<Coords>> neighbours = GetNeighbours(currentNode);
+
+            foreach (GridNode nextNode in neighbours)
+            {
+                if (!cameFrom.ContainsKey(nextNode))
+                {
+                    frontier.Enqueue(nextNode);
+                    cameFrom.Add(nextNode, currentNode);
+                }
+            }
+        }
+
+        List<GridNode> path = new List<GridNode>();
+        GridNode currentPathNode = endNode;
+
+        while (currentPathNode != startNode)
+        {
+            if (!cameFrom.ContainsKey(currentPathNode))
+                return null;
+
+            path.Add(currentPathNode);
+            currentPathNode = cameFrom[currentPathNode];
+        }
+
+        path.Add(startNode);
+        path.Reverse();
+
+        return path;*/
         return null;
+    }
+
+    public List<Monster> FindMonstersInRadius(Coords entityOriginCoords, Size entitySize, int radius)
+    {
+        List<Monster> monsters = new List<Monster>();
+
+        int radiusCells = radius / 5;
+        int squareSide = GetSquareSideForEntitySize(entitySize);
+        int totalCells = radiusCells * 2 + squareSide;
+
+        List<Coords> entityCoords = GetListOfMonsterCoords(entityOriginCoords, entitySize);
+
+        for (int i = -radiusCells; i < totalCells - radiusCells; i++)
+            for (int j = -radiusCells; j < totalCells - radiusCells; j++)
+            {
+                Coords currentCell = new Coords(entityOriginCoords.x + i, entityOriginCoords.y + j);
+
+                if (!entityCoords.Contains(currentCell))
+                    if (ValidateCoords(currentCell))
+                    {
+                        GridNode currentCellNode = GetGridObjectAtCoords(currentCell);
+
+                        if (currentCellNode.HasMonster)
+                            monsters.Add(currentCellNode.Monster);
+                    }
+            }
+
+        return monsters;
     }
 }

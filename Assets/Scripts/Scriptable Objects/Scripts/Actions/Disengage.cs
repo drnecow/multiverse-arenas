@@ -9,6 +9,11 @@ public class Disengage : CombatAction
     private void Awake()
     {
         _name = "Disengage";
-        _identifier = CombatActionName.Disengage;
+        Identifier = CombatActionType.Disengage;
+    }
+
+    public override void DoAction(Monster actor)
+    {
+        Debug.Log($"{actor.Name} is Disengaging");
     }
 }
