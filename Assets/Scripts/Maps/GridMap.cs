@@ -145,7 +145,7 @@ public class GridMap : MonoBehaviour
 
         return monsterCoords;
     }
-    public int GetSquareSideForEntitySize(Size entitySize)
+    public static int GetSquareSideForEntitySize(Size entitySize)
     {
         return entitySize switch
         {
@@ -250,7 +250,7 @@ public class GridMap : MonoBehaviour
             foreach (Coords newCoord in newCoords)
                 GetGridObjectAtCoords(newCoord).Monster = monsterToPlace;
 
-            Debug.Log($"Monster {monsterToPlace} placed on coords with origin ({targetCoords.x}, {targetCoords.y})");
+            //Debug.Log($"Monster {monsterToPlace} placed on coords with origin ({targetCoords.x}, {targetCoords.y})");
         }
         else
         {
@@ -382,8 +382,10 @@ public class GridMap : MonoBehaviour
         List<Monster> monsters = new List<Monster>();
 
         int radiusCells = radius / 5;
+        //Debug.Log($"Radius cells: {radiusCells}");
         int squareSide = GetSquareSideForEntitySize(entitySize);
         int totalCells = radiusCells * 2 + squareSide;
+        //Debug.Log($"Total cells: {totalCells}");
 
         List<Coords> entityCoords = GetListOfMonsterCoords(entityOriginCoords, entitySize);
 
@@ -391,16 +393,22 @@ public class GridMap : MonoBehaviour
             for (int j = -radiusCells; j < totalCells - radiusCells; j++)
             {
                 Coords currentCell = new Coords(entityOriginCoords.x + i, entityOriginCoords.y + j);
+                //Debug.Log($"Current cell: ({currentCell.x}, {currentCell.y})");
 
                 if (!entityCoords.Contains(currentCell))
                     if (ValidateCoords(currentCell))
                     {
                         GridNode currentCellNode = GetGridObjectAtCoords(currentCell);
 
+                        //Debug.Log($"Current cell has monster: {currentCellNode.HasMonster}");
                         if (currentCellNode.HasMonster)
                             monsters.Add(currentCellNode.Monster);
                     }
             }
+
+        //Debug.Log($"Monsters found:");
+        //foreach (Monster monster in monsters)
+            //Debug.Log(monster);
 
         return monsters;
     }

@@ -6,8 +6,8 @@ using Project.Dice;
 [CreateAssetMenu(fileName = "MeleeAttack", menuName = "Scriptable Objects/Attack/Melee Attack")]
 public class MeleeAttack : Attack
 {
-    [SerializeField] private int _reach;
-    public int Reach { get => _reach; }
+    [field: SerializeField] public int Reach { get; private set; }
+
 
     public void MakeMeleeAttack(Monster actor, Monster target)
     {

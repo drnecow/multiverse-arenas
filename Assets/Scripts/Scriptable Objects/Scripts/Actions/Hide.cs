@@ -14,6 +14,8 @@ public class Hide : CombatAction
 
     public override void DoAction(Monster actor)
     {
+        base.DoAction(actor);
+
         Debug.Log($"{actor.Name} is Hiding");
     }
 }

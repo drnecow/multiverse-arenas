@@ -6,11 +6,8 @@ using Project.Dice;
 [CreateAssetMenu(fileName = "RangedAttack", menuName = "Scriptable Objects/Attack/Ranged Attack")]
 public class RangedAttack : Attack
 {
-    [SerializeField] private int _normalRange;
-    [SerializeField] private int _disadvantageRange;
-
-    public int NormalRange { get => _normalRange; }
-    public int DisadvantageRange { get => _disadvantageRange; }
+    [field: SerializeField] public int NormalRange { get; private set; }
+    [field: SerializeField] public int DisadvantageRange { get; private set; }
 
 
     public void MakeRangedAttack(Monster actor, Monster target, int feetToTarget)

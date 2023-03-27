@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,21 +15,35 @@ public struct AttackDamageInfo
 
 public abstract class Attack : ScriptableObject
 {
-    [SerializeField] protected string _name = "Unspecified attack";
+    [field: SerializeField] public string Name { get; protected set; }
     [field: SerializeField] public AttackType Identifier { get; protected set; }
-    [SerializeField] protected Ability _usedAbility;
-    [SerializeField] protected AttackDamageInfo _initialDamageInfo;
-    [SerializeField] protected bool _isAbilityModifierAdded;
-    [SerializeField] protected List<AttackDamageInfo> _additionalDamageInfo;
+    [field: SerializeField] public string StringIdentifier { get; protected set; }
+    [field: SerializeField] public Ability UsedAbility { get; protected set; }
+    [field: SerializeField] public AttackDamageInfo InitialDamageInfo { get; protected set; }
+    [field: SerializeField] public bool IsAbilityModifierAdded { get; protected set; }
+    [field: SerializeField] public List<AttackDamageInfo> AdditionalDamageInfo { get; protected set; }
+
+    public event Action<float> OnAttackAnimationStartedPlaying;
+
+
+    protected CombatDependencies _combatDependencies;
+
 
     protected void MakeAttack(Monster actor, Monster target, RollMode rollMode)
     {
-        Debug.Log($"{actor.Name} is making {_name}");
+        if (_combatDependencies == null)
+            _combatDependencies = CombatDependencies.Instance;
 
-        // TODO: log attack name
+        Debug.Log($"{actor.Name} is making {Name}");
+
+        //Log attack name
+        _combatDependencies.EventsLogger.LogLocalInfo(actor, Name);
+
+        //Play attack animation
+        float animationClipLength = PlayAttackAnimation(actor, target);
+        OnAttackAnimationStartedPlaying.Invoke(animationClipLength);
 
         int toHitRoll = Dice.RollD20(1, rollMode);
-        // TODO: play attack animation
 
         if (toHitRoll == 1)
         {
@@ -43,7 +58,7 @@ public abstract class Attack : ScriptableObject
         }
         else
         {
-            int attackAbilityModifier = actor.Stats.Abilities.GetAbilityModifier(_usedAbility);
+            int attackAbilityModifier = actor.Stats.Abilities.GetAbilityModifier(UsedAbility);
             int toHitNumber = toHitRoll + attackAbilityModifier + actor.Stats.ProficiencyBonus;
 
             if (toHitNumber >= target.Stats.ArmorClass)
@@ -60,9 +75,56 @@ public abstract class Attack : ScriptableObject
         }
     }
 
+    private float PlayAttackAnimation(Monster actor, Monster target)
+    {
+        Coords actorOriginCell = actor.CurrentCoordsOriginCell;
+        Coords targetOriginCell = target.CurrentCoordsOriginCell;
+
+        Coords targetOffsetFromActor = new Coords(targetOriginCell.x - actorOriginCell.x, targetOriginCell.y - actorOriginCell.y);
+        int actorSquareSize = GridMap.GetSquareSideForEntitySize(actor.Stats.Size);
+
+        int xOffset = targetOffsetFromActor.x;
+        int yOffset = targetOffsetFromActor.y;
+
+        //Debug.Log($"Target offset from actor: ({xOffset}, {yOffset})");
+
+        SpriteRenderer actorSpriteRenderer = actor.gameObject.GetComponent<SpriteRenderer>();
+        string clipName = "";
+
+        // Conditions for front/back attack
+        if (yOffset >= 0 && yOffset < actorSquareSize)
+        {
+            if (xOffset > 0)
+                actorSpriteRenderer.flipX = true;
+
+            clipName = $"{StringIdentifier}Front";
+        }
+        // Conditions for up/down attack
+        else if (xOffset >= 0 && xOffset < actorSquareSize)
+        {
+            if (yOffset > 0)
+                actorSpriteRenderer.flipY = true;
+
+            clipName = $"{StringIdentifier}Up";
+        }
+        // Conditions for diagonal up/diagonal down attack
+        else
+        {
+            if (xOffset > 0)
+                actorSpriteRenderer.flipX = true;
+
+            if (yOffset > 0)
+                clipName = $"{StringIdentifier}DiagonalDown";
+            else
+                clipName = $"{StringIdentifier}DiagonalUp";
+        }
+
+        actor.Animator.SetTrigger(clipName);
+        return FindAnimationClipLength(actor.Animator.runtimeAnimatorController, clipName);
+    }
     private void RollAndLogAttackDamage(Monster actor, Monster target, bool isCrit)
     {
-        int attackAbilityModifier = actor.Stats.Abilities.GetAbilityModifier(_usedAbility);
+        int attackAbilityModifier = actor.Stats.Abilities.GetAbilityModifier(UsedAbility);
 
         int damageDiceBonusForSize = actor.Stats.Size switch
         {
@@ -75,18 +137,30 @@ public abstract class Attack : ScriptableObject
             _ => 0
         };
 
-        int initialDamage = Dice.RollDice(_initialDamageInfo.DamageDie, (_initialDamageInfo.NumberOfDamageDice + damageDiceBonusForSize) * (isCrit ? 2 : 1)) + (_isAbilityModifierAdded ? attackAbilityModifier : 0);
-        target.TakeDamage(initialDamage, _initialDamageInfo.DamageType);
-        // TODO: if it's crit, log critical damage; else, log normal damage
+        int initialDamage = Dice.RollDice(InitialDamageInfo.DamageDie, (InitialDamageInfo.NumberOfDamageDice + damageDiceBonusForSize) * (isCrit ? 2 : 1)) + (IsAbilityModifierAdded ? attackAbilityModifier : 0);
+        int damageToTarget = target.TakeDamage(initialDamage, InitialDamageInfo.DamageType);
 
-        if (_additionalDamageInfo.Count > 1)
+        //If it's crit, log critical damage; else, log normal damage
+        _combatDependencies.EventsLogger.LogDamageNumber(target, damageToTarget);
+        // TODO: play target taking damage animation
+
+        if (AdditionalDamageInfo.Count > 1)
         {
-            foreach (AttackDamageInfo damageInfo in _additionalDamageInfo)
+            foreach (AttackDamageInfo damageInfo in AdditionalDamageInfo)
             {
                 int damage = Dice.RollDice(damageInfo.DamageDie, damageInfo.NumberOfDamageDice * (isCrit ? 2 : 1));
-                target.TakeDamage(damage, damageInfo.DamageType);
-                // TODO: if it's crit, log critical damage; else, log normal damage
+                damageToTarget = target.TakeDamage(damage, damageInfo.DamageType);
+                //If it's crit, log critical damage; else, log normal damage
+                _combatDependencies.EventsLogger.LogDamageNumber(target, damageToTarget);
             }
         }
+    }
+    private float FindAnimationClipLength(RuntimeAnimatorController actorAnimatorController, string clipName)
+    {
+        foreach (AnimationClip clip in actorAnimatorController.animationClips)
+            if (clip.name == clipName)
+                return clip.length;
+
+        return 0;
     }
 }

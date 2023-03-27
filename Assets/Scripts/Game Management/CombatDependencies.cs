@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,7 +6,8 @@ using UnityEngine;
 public class CombatDependencies : MonoBehaviour
 {
     public static CombatDependencies Instance { get; private set; }
-    public GridMap Map { get; private set; }
+    [field: SerializeField] public GridMap Map { get; private set; }
+    [field: SerializeField] public CombatEventsLogger EventsLogger { get; private set; }
 
 
     private void Awake()

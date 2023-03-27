@@ -14,6 +14,8 @@ public class Grapple : CombatAction
 
     public override void DoAction(Monster actor, Monster target)
     {
+        base.DoAction(actor);
+
         Debug.Log($"{actor.Name} is trying to Grapple {target.Name}");
     }
 }

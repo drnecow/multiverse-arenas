@@ -6,6 +6,9 @@ using Project.Constants;
 [CreateAssetMenu(fileName = "Dash", menuName = "Scriptable Objects/Common Action/Dash")]
 public class Dash : CombatAction
 {
+    private GridMap _map;
+
+
     private void Awake()
     {
         _name = "Dash";
@@ -14,6 +17,11 @@ public class Dash : CombatAction
 
     public override void DoAction(Monster actor, List<Coords> path)
     {
+        base.DoAction(actor);
+
+        if (_map == null)
+            _map = CombatDependencies.Instance.Map;
+
         string pathString = "";
 
         foreach (Coords pathCoord in path)

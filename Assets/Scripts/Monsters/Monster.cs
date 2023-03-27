@@ -9,8 +9,9 @@ public class Monster : MonoBehaviour
     [SerializeField] private bool _isPlayerControlled;
     public bool IsPlayerControlled { get => _isPlayerControlled; set => _isPlayerControlled = value; }
 
-    [SerializeField] private GridMap _map;
-    public GridMap Map { get => _map; set => _map = value; }
+    [field: SerializeField] public CombatDependencies CombatDependencies { get; private set; }
+
+    public Animator Animator { get; private set; }
 
     [field: SerializeField] public string Name { get; private set; }
     [field: SerializeField] public MonsterStats Stats { get; private set; }
@@ -51,19 +52,19 @@ public class Monster : MonoBehaviour
 
             return Stats.Size switch
             {
-                Size.Tiny => _map.WorldPositionToXY(transform.position),
-                Size.Small => _map.WorldPositionToXY(transform.position),
-                Size.Medium => _map.WorldPositionToXY(transform.position),
-                Size.Large => _map.WorldPositionToXY(new Vector3(transform.position.x - cellSize/2, transform.position.y + cellSize/2)),
-                Size.Huge => _map.WorldPositionToXY(new Vector3(transform.position.x - cellSize, transform.position.y + cellSize)),
-                Size.Gargantuan => _map.WorldPositionToXY(new Vector3(transform.position.x - (cellSize + cellSize/2), transform.position.y + (cellSize + cellSize/2))),
-                _ => _map.WorldPositionToXY(transform.position)
+                Size.Tiny => CombatDependencies.Map.WorldPositionToXY(transform.position),
+                Size.Small => CombatDependencies.Map.WorldPositionToXY(transform.position),
+                Size.Medium => CombatDependencies.Map.WorldPositionToXY(transform.position),
+                Size.Large => CombatDependencies.Map.WorldPositionToXY(new Vector3(transform.position.x - cellSize/2, transform.position.y + cellSize/2)),
+                Size.Huge => CombatDependencies.Map.WorldPositionToXY(new Vector3(transform.position.x - cellSize, transform.position.y + cellSize)),
+                Size.Gargantuan => CombatDependencies.Map.WorldPositionToXY(new Vector3(transform.position.x - (cellSize + cellSize/2), transform.position.y + (cellSize + cellSize/2))),
+                _ => CombatDependencies.Map.WorldPositionToXY(transform.position)
             };
         }
     }
     public List<Coords> CurrentCoords
     {
-        get => _map.GetListOfMonsterCoords(CurrentCoordsOriginCell, Stats.Size);
+        get => CombatDependencies.Map.GetListOfMonsterCoords(CurrentCoordsOriginCell, Stats.Size);
     }
 
 
@@ -79,6 +80,7 @@ public class Monster : MonoBehaviour
 
     private void Awake()
     {
+        Animator = gameObject.GetComponent<Animator>();
         ActiveConditions = new HashSet<Condition>();
     }
 
@@ -95,27 +97,34 @@ public class Monster : MonoBehaviour
         else
             return false;
     }
-    public void TakeDamage(int damagePoints, DamageType damageType)
+    public int TakeDamage(int damagePoints, DamageType damageType)
     {
+        int totalDamageTaken = damagePoints;
+
         if (Stats.DamageImmunities.Contains(damageType))
         {
             Debug.Log($"{Name} is immune to {damageType} damage, so no damage to it");
+            totalDamageTaken = 0;
         }
         else if (Stats.DamageResistances.Contains(damageType))
         {
-            Debug.Log($"{Name} is resistant to {damageType} damage, so half damage to it: {damagePoints / 2}");
-            Stats.CurrentHP -= damagePoints / 2;
+            totalDamageTaken = damagePoints / 2;
+            Debug.Log($"{Name} is resistant to {damageType} damage, so half damage to it: {totalDamageTaken}");
+            Stats.CurrentHP -= totalDamageTaken;
         }
         else if (Stats.DamageVulnerabilities.Contains(damageType))
         {
-            Debug.Log($"{Name} is vulnerable to {damageType} damage, so double damage to it: {damagePoints * 2}");
-            Stats.CurrentHP -= damagePoints * 2;
+            totalDamageTaken = damagePoints * 2;
+            Debug.Log($"{Name} is vulnerable to {damageType} damage, so double damage to it: {totalDamageTaken}");
+            Stats.CurrentHP -= totalDamageTaken;
         }
         else
         {
             Debug.Log($"{Name} takes {damagePoints} points of {damageType} damage");
             Stats.CurrentHP -= damagePoints;
         }
+
+        return totalDamageTaken;
     }
     public void EscapeGrapple(bool useAthletics)
     {

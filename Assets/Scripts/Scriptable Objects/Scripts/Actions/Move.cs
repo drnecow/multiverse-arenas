@@ -6,6 +6,9 @@ using Project.Constants;
 [CreateAssetMenu(fileName = "Move", menuName = "Scriptable Objects/Common Action/Move")]
 public class Move : CombatAction
 {
+    private GridMap _map;
+
+
     private void Awake()
     {
         _name = "Move";
@@ -14,6 +17,13 @@ public class Move : CombatAction
 
     public override void DoAction(Monster actor, List<Coords> path)
     {
+        base.DoAction(actor);
+
+        if (_map == null)
+            _map = CombatDependencies.Instance.Map;
+
+        actor.Animator.SetTrigger("Move");
+
         string pathString = "";
 
         foreach (Coords pathCoord in path)

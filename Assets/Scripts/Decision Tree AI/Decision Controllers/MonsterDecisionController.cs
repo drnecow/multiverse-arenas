@@ -17,12 +17,13 @@ public class MonsterDecisionController : MonoBehaviour
     protected Dictionary<CombatActionType, CombatAction> _commonActions;
 
     public event Action OnEndTurn;
+    protected bool _currentAnimationStartedPlaying = false;
+    protected float _currentAnimationLength;
 
 
     protected virtual void Awake()
     {
         _actor = gameObject.GetComponent<Monster>();
-        _map = _actor.Map;
 
         _commonActions = new Dictionary<CombatActionType, CombatAction>()
         {
@@ -34,6 +35,9 @@ public class MonsterDecisionController : MonoBehaviour
             {  CombatActionType.Hide, _actor.CombatActions.FindMainActionOfType(CombatActionType.Hide) },
             {  CombatActionType.Seek, _actor.CombatActions.FindMainActionOfType(CombatActionType.Seek) },
         };
+
+        foreach (CombatAction commonAction in _commonActions.Values)
+            commonAction.OnActionAnimationStartedPlaying += SwitchToCurrentAnimationClip;
 
         OnEndTurn += () => Debug.Log($"{_actor} ended turn");
     }
@@ -48,6 +52,9 @@ public class MonsterDecisionController : MonoBehaviour
     {
         if (_decisionTreeRoot == null)
             BuildDecisionTree();
+
+        if (_map == null)
+            _map = _actor.CombatDependencies.Map;
 
         Action decision = _decisionTreeRoot.RunNodeProcess();
 
@@ -69,8 +76,6 @@ public class MonsterDecisionController : MonoBehaviour
     {
         List<Monster> enemies = new List<Monster>();
         List<Monster> surroundingMonsters = _map.FindMonstersInRadius(_actor.CurrentCoordsOriginCell, _actor.Stats.Size, attack.Reach);
-
-        Debug.Log($"Visible targets: {_actor.VisibleTargets}");
 
         foreach (Monster monster in surroundingMonsters)
         {
@@ -116,14 +121,35 @@ public class MonsterDecisionController : MonoBehaviour
 
         return closestEnemy;
     }
-    public void DoSequenceOfActionsAndEndTurn(Action action, params Action[] additionalActions)
+    public void DoSequenceOfActionsAndEndTurn(Action monsterAction, params Action[] additionalActions)
     {
-        action();
+        List<Action> monsterActions = new List<Action>() { monsterAction };
 
         foreach (Action additionalAction in additionalActions)
-            additionalAction();
+            monsterActions.Add(additionalAction);
 
+        StartCoroutine(WaitForActionAnimationsToFinish(monsterActions));
+    }
+    private IEnumerator WaitForActionAnimationsToFinish(List<Action> monsterActions)
+    {
+        foreach (Action monsterAction in monsterActions)
+        {
+            _currentAnimationStartedPlaying = false;
+            monsterAction();
+
+            while (!_currentAnimationStartedPlaying)
+                yield return null;
+
+            yield return new WaitForSeconds(_currentAnimationLength + ConstantValues.ANIMATIONS_SWITCH_SPEED);
+        }
+
+        Debug.Log($"Total actions played: {monsterActions.Count}");
         OnEndTurn?.Invoke();
+    }
+    protected void SwitchToCurrentAnimationClip(float currentClipLength)
+    {
+        _currentAnimationStartedPlaying = true;
+        _currentAnimationLength = currentClipLength;
     }
     public void SkipTurn()
     {

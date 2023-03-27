@@ -149,6 +149,8 @@ namespace Project.Constants
 
     public static class ConstantValues
     {
+        public const float ANIMATIONS_SWITCH_SPEED = 0.8f;
+
         public const float MAP_CELL_SIZE = 10f;
 
         public const int MAX_ABILITY_VALUE = 40;

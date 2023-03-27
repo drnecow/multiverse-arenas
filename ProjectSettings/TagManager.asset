@@ -41,6 +41,9 @@ TagManager:
   - name: Map
     uniqueID: 1881831063
     locked: 0
+  - name: Highlight
+    uniqueID: 1167899227
+    locked: 0
   - name: Obstacles
     uniqueID: 1722666703
     locked: 0
