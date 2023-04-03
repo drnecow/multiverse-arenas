@@ -8,8 +8,8 @@ public class Seek : CombatAction
 {
     private void Awake()
     {
-        _name = "Seek";
-        Identifier = CombatActionType.Seek;
+        Name = "Seek";
+        Identifier = MonsterActionType.Seek;
     }
 
     public override void DoAction(Monster actor)

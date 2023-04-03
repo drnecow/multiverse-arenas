@@ -73,8 +73,7 @@ namespace Project.Constants
         Prone = 11,
         Restrained = 12,
         Stunned = 13,
-        Unconscious = 14,
-        Dodging = 15
+        Unconscious = 14
     }
 
     public enum DamageType
@@ -130,7 +129,7 @@ namespace Project.Constants
         PackTactics = 4
     }
 
-    public enum CombatActionType
+    public enum MonsterActionType
     {
         Move = 1,
         Dash = 2,
@@ -145,6 +144,13 @@ namespace Project.Constants
     {
         UnarmedAttack = 1,
         BiteAttack = 2
+    }
+
+    public enum CombatActionType
+    {
+        FreeAction = 1,
+        MainAction = 2,
+        BonusAction = 3
     }
 
     public static class ConstantValues

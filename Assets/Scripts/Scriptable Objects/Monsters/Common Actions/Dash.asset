@@ -9,8 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b60f9935852c32143a74dbea87f0c9a9, type: 3}
+  m_Script: {fileID: 11500000, guid: 1b9d32987cda46a49aa5cde729127bcb, type: 3}
   m_Name: Dash
   m_EditorClassIdentifier: 
-  _name: Dash
-  _identifier: 2
+  <Name>k__BackingField: Dash
+  <Identifier>k__BackingField: 2
+  _speedPerCellInSeconds: 0.25

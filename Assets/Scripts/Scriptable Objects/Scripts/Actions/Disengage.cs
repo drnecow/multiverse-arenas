@@ -6,10 +6,12 @@ using Project.Constants;
 [CreateAssetMenu(fileName = "Disengage", menuName = "Scriptable Objects/Common Action/Disengage")]
 public class Disengage : CombatAction
 {
+    // TODO: add removal of Disengage at the end of turn for player-controlled monsters
+
     private void Awake()
     {
-        _name = "Disengage";
-        Identifier = CombatActionType.Disengage;
+        Name = "Disengage";
+        Identifier = MonsterActionType.Disengage;
     }
 
     public override void DoAction(Monster actor)
@@ -17,5 +19,7 @@ public class Disengage : CombatAction
         base.DoAction(actor);
 
         Debug.Log($"{actor.Name} is Disengaging");
+
+        actor.IsDisengaging = true;
     }
 }

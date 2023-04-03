@@ -8,8 +8,8 @@ public class Grapple : CombatAction
 {
     private void Awake()
     {
-        _name = "Grapple";
-        Identifier = CombatActionType.Grapple;
+        Name = "Grapple";
+        Identifier = MonsterActionType.Grapple;
     }
 
     public override void DoAction(Monster actor, Monster target)

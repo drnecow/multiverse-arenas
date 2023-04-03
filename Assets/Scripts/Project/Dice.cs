@@ -88,8 +88,8 @@ namespace Project.Dice
                     rolledNumbers2 += $"{roll} ";
                 }
 
-                Debug.Log($"First roll: {rolledNumbers1}");
-                Debug.Log($"Second roll: {rolledNumbers2}");
+                //Debug.Log($"First roll: {rolledNumbers1}");
+                //Debug.Log($"Second roll: {rolledNumbers2}");
 
                 if (rollMode == RollMode.Advantage)
                     return Mathf.Max(rollSum1, rollSum2);
@@ -97,7 +97,7 @@ namespace Project.Dice
                     return Mathf.Min(rollSum1, rollSum2);
             }
 
-            Debug.Log(rolledNumbers1);
+            //Debug.Log(rolledNumbers1);
 
             return rollSum1;
         }

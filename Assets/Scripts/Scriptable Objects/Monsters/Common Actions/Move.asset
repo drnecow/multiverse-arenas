@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b9d32987cda46a49aa5cde729127bcb, type: 3}
   m_Name: Move
   m_EditorClassIdentifier: 
-  _name: Move
-  _identifier: 1
+  <Name>k__BackingField: Move
+  <Identifier>k__BackingField: 1
+  _speedPerCellInSeconds: 0.5

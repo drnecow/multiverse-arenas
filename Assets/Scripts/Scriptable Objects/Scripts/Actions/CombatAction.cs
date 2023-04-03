@@ -6,10 +6,10 @@ using Project.Constants;
 
 public abstract class CombatAction : ScriptableObject
 {
-    [SerializeField] protected string _name = "Unspecified action";
-    [field: SerializeField] public CombatActionType Identifier { get; protected set; }
+    [field: SerializeField] public string Name { get; set; }
+    [field: SerializeField] public MonsterActionType Identifier { get; protected set; }
 
-    public event Action<float> OnActionAnimationStartedPlaying;
+    public event Action<Monster, float> OnActionAnimationStartedPlaying;
 
 
     protected CombatDependencies _combatDependencies;
@@ -20,29 +20,46 @@ public abstract class CombatAction : ScriptableObject
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
 
-        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, _name);
+        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, Name);
     }
     public virtual void DoAction(Monster actor, Monster target)
     {
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
 
-        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, _name);
+        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, Name);
     }
     public virtual void DoAction(Monster actor, List<Coords> path)
     {
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
 
-        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, _name);
+        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, Name);
+    }
+    public virtual void DoAction(Monster actor, List<List<Coords>> path)
+    {
+        if (_combatDependencies == null)
+            _combatDependencies = CombatDependencies.Instance;
+
+        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, Name);
+    }
+
+    public virtual bool DoPlayerButtonAction()
+    {
+        return false;
     }
 
     protected float FindAnimationClipLength(RuntimeAnimatorController actorAnimatorController)
     {
         foreach (AnimationClip clip in actorAnimatorController.animationClips)
-            if (clip.name == _name)
+            if (clip.name == Name)
                 return clip.length;
 
         return 0;
+    }
+
+    protected void OnActionAnimationStartedPlayingInvoke(Monster actor, float animationDuration)
+    {
+        OnActionAnimationStartedPlaying?.Invoke(actor, animationDuration);
     }
 }

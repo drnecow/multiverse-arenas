@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,13 +28,27 @@ public class GiantRatDecisionController : MonsterDecisionController
             () => DoSequenceOfActionsAndEndTurn(() => _biteAttack.MakeMeleeAttack(_actor, _closestTarget)));
 
         DTreeLeaf moveToClosestEnemyAndAttack = new DTreeLeaf("Move to closest enemy and attack it",
-            () => DoSequenceOfActionsAndEndTurn(() => _commonActions[CombatActionType.Move].DoAction(_actor, _pathToTarget),
-                                                () => _biteAttack.MakeMeleeAttack(_actor, _closestTarget)));
+            () => { Action moveAction;
+                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
+                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _singleCellPathToTarget);
+                else
+                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _multipleCellPathToTarget);
+
+                DoSequenceOfActionsAndEndTurn(moveAction, () => _biteAttack.MakeMeleeAttack(_actor, _closestTarget));
+            });
+
         DTreeLeaf dashToClosestEnemy = new DTreeLeaf("Dash to closest enemy",
-            () => DoSequenceOfActionsAndEndTurn(() => _commonActions[CombatActionType.Dash].DoAction(_actor, _pathToTarget)));
+            () => { Action dashAction;
+                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
+                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _singleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)));
+                else
+                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _multipleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)));
+
+                DoSequenceOfActionsAndEndTurn(dashAction);
+            });
 
         DTreeLeaf takeDodgeAction = new DTreeLeaf("Take Dodge action",
-            () => DoSequenceOfActionsAndEndTurn(() => _actor.CombatActions.FindMainActionOfType(CombatActionType.Dodge).DoAction(_actor)));
+            () => DoSequenceOfActionsAndEndTurn(() => _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dodge).DoAction(_actor)));
 
         DTreeLeaf skipTurn = new DTreeLeaf("Nothing to do, skip turn", SkipTurn);
 
@@ -62,22 +77,39 @@ public class GiantRatDecisionController : MonsterDecisionController
                     _closestTarget = enemiesInMeleeReach[0];
                 return enemiesInMeleeReach.Count > 0; 
             });
-        
 
-        DTreeBinaryConditional doIHaveEnoughSpeedToReachClosestEnemyThisTurn = new DTreeBinaryConditional("Do I have enough speed to reach closest enemy on this turn?", 
-            () => { _closestTarget = FindClosestEnemy(out _pathToTarget);
-                if (_closestTarget != null)
-                    return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _pathToTarget.Count;
+        DTreeBinaryConditional isThereAPathToEnemyAtAll = new DTreeBinaryConditional("Is there a path to any enemy at all?", 
+            () =>
+            {
+                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
+                    _closestTarget = FindClosestEnemy(out _singleCellPathToTarget);
                 else
+                    _closestTarget = FindClosestEnemy(out _multipleCellPathToTarget);
+
+                if (_closestTarget == null)
                     return false;
+                else
+                    return true;
+            });
+
+        DTreeBinaryConditional doIHaveEnoughSpeedToReachClosestEnemyThisTurn = new DTreeBinaryConditional("Do I have enough speed to reach closest enemy on this turn?",
+            () =>
+            {
+                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
+                    return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _singleCellPathToTarget.Count;
+                else
+                    return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _multipleCellPathToTarget.Count;
             });
 
         
         doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetTrueConditionChild(moveToClosestEnemyAndAttack);
         doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetFalseConditionChild(dashToClosestEnemy);
 
+        isThereAPathToEnemyAtAll.SetTrueConditionChild(doIHaveEnoughSpeedToReachClosestEnemyThisTurn);
+        isThereAPathToEnemyAtAll.SetFalseConditionChild(takeDodgeAction);
+
         isEnemyInMyMeleeReach.SetTrueConditionChild(attackEnemyInMelee);
-        isEnemyInMyMeleeReach.SetFalseConditionChild(doIHaveEnoughSpeedToReachClosestEnemyThisTurn);
+        isEnemyInMyMeleeReach.SetFalseConditionChild(isThereAPathToEnemyAtAll);
 
         doISeeEnemies.SetTrueConditionChild(isEnemyInMyMeleeReach);
         doISeeEnemies.SetFalseConditionChild(takeDodgeAction);

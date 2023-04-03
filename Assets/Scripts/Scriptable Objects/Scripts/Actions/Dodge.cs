@@ -8,8 +8,8 @@ public class Dodge : CombatAction
 {
     private void Awake()
     {
-        _name = "Dodge";
-        Identifier = CombatActionType.Dodge;
+        Name = "Dodge";
+        Identifier = MonsterActionType.Dodge;
     }
 
     public override void DoAction(Monster actor)
@@ -17,6 +17,9 @@ public class Dodge : CombatAction
         base.DoAction(actor);
 
         Debug.Log($"{actor.Name} is Dodging");
+
+        actor.IsDodging = true;
+        OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
     }
 }
 

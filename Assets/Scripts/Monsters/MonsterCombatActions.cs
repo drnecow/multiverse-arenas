@@ -6,33 +6,33 @@ using Project.Constants;
 [System.Serializable]
 public class MonsterCombatActions
 {
-    [SerializeField] private List<CombatAction> _freeActions;
-    [SerializeField] private List<CombatAction> _mainActions;
-    [SerializeField] private List<CombatAction> _bonusActions;
+    [field: SerializeField] public List<CombatAction> FreeActions { get; private set; }
+    [field: SerializeField] public List<CombatAction> MainActions { get; private set; }
+    [field: SerializeField] public List<CombatAction> BonusActions { get; private set; }
 
-    [SerializeField] private MeleeAttackIntDictionary _meleeAttacks;
-    [SerializeField] private RangedAttackIntDictionary _rangedAttacks;
+    [field: SerializeField] public MeleeAttackIntDictionary MeleeAttacks { get; private set; }
+    [field: SerializeField] public RangedAttackIntDictionary RangedAttacks { get; private set; }
 
 
-    public CombatAction FindFreeActionOfType(CombatActionType actionType)
+    public CombatAction FindFreeActionOfType(MonsterActionType actionType)
     {
-        foreach (CombatAction freeAction in _freeActions)
+        foreach (CombatAction freeAction in FreeActions)
             if (freeAction.Identifier == actionType)
                 return freeAction;
 
         return null;
     }
-    public CombatAction FindMainActionOfType(CombatActionType actionType)
+    public CombatAction FindMainActionOfType(MonsterActionType actionType)
     {
-        foreach (CombatAction mainAction in _mainActions)
+        foreach (CombatAction mainAction in MainActions)
             if (mainAction.Identifier == actionType)
                 return mainAction;
 
         return null;
     }
-    public CombatAction FindBonusActionOfType(CombatActionType actionType)
+    public CombatAction FindBonusActionOfType(MonsterActionType actionType)
     {
-        foreach (CombatAction bonusAction in _bonusActions)
+        foreach (CombatAction bonusAction in BonusActions)
             if (bonusAction.Identifier == actionType)
                 return bonusAction;
 
@@ -41,7 +41,7 @@ public class MonsterCombatActions
 
     public MeleeAttack FindMeleeAttackOfType(AttackType attackType)
     {
-        foreach (MeleeAttack meleeAttack in _meleeAttacks.Keys)
+        foreach (MeleeAttack meleeAttack in MeleeAttacks.Keys)
             if (meleeAttack.Identifier == attackType)
                 return meleeAttack;
 
@@ -49,7 +49,7 @@ public class MonsterCombatActions
     }
     public RangedAttack FindRangedAttackOfType(AttackType attackType)
     {
-        foreach (RangedAttack rangedAttack in _rangedAttacks.Keys)
+        foreach (RangedAttack rangedAttack in RangedAttacks.Keys)
             if (rangedAttack.Identifier == attackType)
                 return rangedAttack;
 

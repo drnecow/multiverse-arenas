@@ -23,7 +23,7 @@ public abstract class Attack : ScriptableObject
     [field: SerializeField] public bool IsAbilityModifierAdded { get; protected set; }
     [field: SerializeField] public List<AttackDamageInfo> AdditionalDamageInfo { get; protected set; }
 
-    public event Action<float> OnAttackAnimationStartedPlaying;
+    public event Action<Monster, float> OnAttackAnimationStartedPlaying;
 
 
     protected CombatDependencies _combatDependencies;
@@ -41,18 +41,21 @@ public abstract class Attack : ScriptableObject
 
         //Play attack animation
         float animationClipLength = PlayAttackAnimation(actor, target);
-        OnAttackAnimationStartedPlaying.Invoke(animationClipLength);
+        OnAttackAnimationStartedPlaying.Invoke(actor, animationClipLength);
 
         int toHitRoll = Dice.RollD20(1, rollMode);
 
         if (toHitRoll == 1)
         {
-            // TODO: log critical miss
+            // Log critical miss
+            //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Critical miss");
             // TODO: play target dodging animation
         }
         else if (toHitRoll == 20)
         {
-            // TODO: log critical hit
+            // Log critical hit
+            //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Critical hit");
+            // TODO: play target taking damage animation
 
             RollAndLogAttackDamage(actor, target, true);
         }
@@ -63,13 +66,16 @@ public abstract class Attack : ScriptableObject
 
             if (toHitNumber >= target.Stats.ArmorClass)
             {
-                // TODO: log hit
+                // Log hit
+                //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Hit");
+                // TODO: play target taking damage animation
 
                 RollAndLogAttackDamage(actor, target, false);
             }
             else
             {
-                // TODO: log miss
+                // Log miss
+                //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Miss");
                 // TODO: play target dodging animation
             }
         }
@@ -119,8 +125,10 @@ public abstract class Attack : ScriptableObject
                 clipName = $"{StringIdentifier}DiagonalUp";
         }
 
+        float clipLength = FindAnimationClipLength(actor.Animator.runtimeAnimatorController, clipName);
+
         actor.Animator.SetTrigger(clipName);
-        return FindAnimationClipLength(actor.Animator.runtimeAnimatorController, clipName);
+        return clipLength;
     }
     private void RollAndLogAttackDamage(Monster actor, Monster target, bool isCrit)
     {

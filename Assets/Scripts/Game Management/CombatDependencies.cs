@@ -6,8 +6,10 @@ using UnityEngine;
 public class CombatDependencies : MonoBehaviour
 {
     public static CombatDependencies Instance { get; private set; }
-    [field: SerializeField] public GridMap Map { get; private set; }
-    [field: SerializeField] public CombatEventsLogger EventsLogger { get; private set; }
+    public GridMap Map { get; private set; }
+    public MapHighlight Highlight { get; set; }
+    public CombatEventsLogger EventsLogger { get; private set; }
+    public CombatManager CombatManager { get; private set; }
 
 
     private void Awake()
@@ -19,5 +21,19 @@ public class CombatDependencies : MonoBehaviour
         }
         else
             Instance = this;
+
+        EventsLogger = gameObject.GetComponent<CombatEventsLogger>();
+        CombatManager = gameObject.GetComponent<CombatManager>();
+
+        CombatManager.OnWinGame += () => EventsLogger.LogScreenInfo("You win");
+        CombatManager.OnLoseGame += () => EventsLogger.LogScreenInfo("You lose");
+    }
+
+    public void SetMapAndHighlight(GridMap map)
+    {
+        Map = map;
+        Highlight = map.GetComponent<MapHighlight>();
+
+        Debug.Log($"Combat map set to {Map}, map highlight set to {Highlight}");
     }
 }

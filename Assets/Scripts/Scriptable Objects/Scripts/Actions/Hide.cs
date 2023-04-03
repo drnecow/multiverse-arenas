@@ -8,8 +8,8 @@ public class Hide : CombatAction
 {
     private void Awake()
     {
-        _name = "Hide";
-        Identifier = CombatActionType.Hide;
+        Name = "Hide";
+        Identifier = MonsterActionType.Hide;
     }
 
     public override void DoAction(Monster actor)

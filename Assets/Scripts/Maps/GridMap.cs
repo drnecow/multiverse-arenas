@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +8,8 @@ using Project.Utils;
 
 public struct Coords
 {
-    public int x;
-    public int y;
+    public int x { get; private set; }
+    public int y { get; private set; }
 
     public static Coords Zero { get => new Coords(0, 0); }
 
@@ -41,10 +42,70 @@ public struct Coords
         return (x, y).GetHashCode();
     }
 
+    public override string ToString()
+    {
+        return $"({x}, {y})";
+    }
+
     public Coords(int x, int y)
     {
         this.x = x;
         this.y = y;
+    }
+}
+
+public enum Direction
+{
+    Top = 1, 
+    Left = 2,
+    Right = 3,
+    Bottom = 4,
+
+    TopLeft = 5,
+    TopRight = 6,
+    BottomLeft = 7,
+    BottomRight = 8
+}
+public struct MultipleCellLine
+{
+    public List<Coords> Coords { get; private set; }
+    public Direction? RelativeDirection { get; private set; }
+
+    public MultipleCellLine(List<Coords> coords, Direction? direction)
+    {
+        Coords = coords;
+        RelativeDirection = direction;
+    }
+
+    public static MultipleCellLine Null = new MultipleCellLine(new List<Coords>(), null);
+
+    public static bool operator ==(MultipleCellLine line1, MultipleCellLine line2)
+    {
+        return line1.Equals(line2);
+    }
+
+    public static bool operator !=(MultipleCellLine line1, MultipleCellLine line2)
+    {
+        return !(line1 == line2);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj == null)
+            return false;
+
+        if (obj is MultipleCellLine)
+        {
+            MultipleCellLine comparedLine = (MultipleCellLine)obj;
+            return (Coords.SequenceEqual(comparedLine.Coords) && RelativeDirection == comparedLine.RelativeDirection);
+        }
+        else
+            return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return (String.Join(" ", Coords), RelativeDirection).GetHashCode();
     }
 }
 
@@ -59,6 +120,7 @@ public class GridMap : MonoBehaviour
 
     [SerializeField] private bool _debugViewEnabled;
     private TextMesh[,] _markupText;
+    private TextMesh[,] _cellOccupationIndicatingText;
     GameObject _textParent;
 
     public int Width { get => _width; }
@@ -71,6 +133,7 @@ public class GridMap : MonoBehaviour
         if (_debugViewEnabled)
         {
             _markupText = new TextMesh[_width, _height];
+            _cellOccupationIndicatingText = new TextMesh[_width, _height];
             _textParent = new GameObject("Markup Text");
         }
 
@@ -88,6 +151,8 @@ public class GridMap : MonoBehaviour
                     _contents[x, y] = new GridNode();
                     _markupText[x, y] = Utils.CreateWorldText($"{x}, {y}", null, XYToWorldPosition(new Coords(x, y)), 20, Color.black, TextAnchor.MiddleCenter);
                     _markupText[x, y].transform.SetParent(_textParent.transform);
+
+                    _cellOccupationIndicatingText[x, y] = Utils.CreateWorldText("True", null, XYToWorldPosition(new Coords(x, y)), 20, Color.green, TextAnchor.MiddleCenter);
                 }
                 else
                     _contents[x, y] = new GridNode();
@@ -100,12 +165,7 @@ public class GridMap : MonoBehaviour
     }
     public virtual Coords WorldPositionToXY(Vector3 worldPosition)
     {
-        Coords coords = new Coords
-        {
-            x = Mathf.FloorToInt((worldPosition - _originPosition).x / _cellSize),
-            y = Mathf.FloorToInt(-(worldPosition - _originPosition).y / _cellSize)
-        };
-
+        Coords coords = new Coords(Mathf.FloorToInt((worldPosition - _originPosition).x / _cellSize), Mathf.FloorToInt(-(worldPosition - _originPosition).y / _cellSize));
         return coords;
     }
     public bool ValidateCoords(Coords coords)
@@ -158,6 +218,13 @@ public class GridMap : MonoBehaviour
             _ => 1
         };
     }
+    public static bool IsSingleCelledSize(Size monsterSize)
+    {
+        if (monsterSize == Size.Tiny || monsterSize == Size.Small || monsterSize == Size.Medium)
+            return true;
+        else
+            return false;
+    }
 
     public List<Coords> GetNeighboursForSingleCellEntity(Coords entityOriginCoords)
     {
@@ -174,63 +241,102 @@ public class GridMap : MonoBehaviour
 
         return neighbours;
     }
-    public List<List<Coords>> GetNeighboursForMultipleCellEntity(Coords entityOriginNode, Size entitySize)
+    public List<MultipleCellLine> GetNeighboursForMultipleCellEntity(Coords entityOriginNode, int entitySquareSide, bool includeDiagonals=false)
     {
-        int squareSide = GetSquareSideForEntitySize(entitySize);
-        List<List<Coords>> neighbours = new List<List<Coords>>();
+        List<MultipleCellLine> neighbours = new List<MultipleCellLine>();
 
         List<Coords> topNeighbours = new List<Coords>();
         List<Coords> leftNeighbours = new List<Coords>();
         List<Coords> rightNeighbours = new List<Coords>();
         List<Coords> bottomNeighbours = new List<Coords>();
 
-        for (int i = 0; i < squareSide; i++)
+        for (int i = 0; i < entitySquareSide; i++)
         {
             Coords topNeighbour = new Coords(entityOriginNode.x + i, entityOriginNode.y - 1);
             Coords leftNeighbour = new Coords(entityOriginNode.x - 1, entityOriginNode.y + i);
-            Coords bottomNeighbour = new Coords(entityOriginNode.x + i, entityOriginNode.y + squareSide);
-            Coords rightNeighbour = new Coords(entityOriginNode.x + squareSide, entityOriginNode.y + i);
+            Coords bottomNeighbour = new Coords(entityOriginNode.x + i, entityOriginNode.y + entitySquareSide);
+            Coords rightNeighbour = new Coords(entityOriginNode.x + entitySquareSide, entityOriginNode.y + i);
 
             if (ValidateCoords(topNeighbour))
                 topNeighbours.Add(topNeighbour);
             if (ValidateCoords(leftNeighbour))
                 leftNeighbours.Add(leftNeighbour);
-            if (ValidateCoords(bottomNeighbour))
-                rightNeighbours.Add(bottomNeighbour);
             if (ValidateCoords(rightNeighbour))
-                bottomNeighbours.Add(rightNeighbour);
+                rightNeighbours.Add(rightNeighbour);
+            if (ValidateCoords(bottomNeighbour))
+                bottomNeighbours.Add(bottomNeighbour);
         }
 
-        neighbours.Add(topNeighbours);
-        neighbours.Add(leftNeighbours);
-        neighbours.Add(rightNeighbours);
-        neighbours.Add(bottomNeighbours);
+        if (topNeighbours.Count == entitySquareSide)
+        {
+            MultipleCellLine topLine = new MultipleCellLine(topNeighbours, Direction.Top);
+            neighbours.Add(topLine);
+        }
+        if (leftNeighbours.Count == entitySquareSide)
+        {
+            MultipleCellLine leftLine = new MultipleCellLine(leftNeighbours, Direction.Left);
+            neighbours.Add(leftLine);
+        }
+        if (rightNeighbours.Count == entitySquareSide)
+        {
+            MultipleCellLine rightLine = new MultipleCellLine(rightNeighbours, Direction.Right);
+            neighbours.Add(rightLine);
+        }
+        if (bottomNeighbours.Count == entitySquareSide)
+        {
+            MultipleCellLine bottomLine = new MultipleCellLine(bottomNeighbours, Direction.Bottom);
+            neighbours.Add(bottomLine);
+        }
 
-        return neighbours;
-    }
-    public List<Coords> GetNeighboursWithDiagonals(Coords entityOriginNode, Size entitySize)
-    {
-        int squareSide = GetSquareSideForEntitySize(entitySize);
-        List<List<Coords>> neighboursDivided = GetNeighboursForMultipleCellEntity(entityOriginNode, entitySize);
+        if (includeDiagonals)
+        {
+            List<Coords> topLeftNeighbours = new List<Coords>();
+            List<Coords> topRightNeighbours = new List<Coords>();
+            List<Coords> bottomLeftNeighbours = new List<Coords>();
+            List<Coords> bottomRightNeighbours = new List<Coords>();
 
-        List<Coords> neighbours = new List<Coords>();
-        foreach (List<Coords> neighbourSide in neighboursDivided)
-            foreach (Coords sideCoord in neighbourSide)
-                neighbours.Add(sideCoord);
+            for (int i = -entitySquareSide; i < 0; i++)
+            {
+                Coords topLeftNeighbour = new Coords(entityOriginNode.x + i, entityOriginNode.y - 1);
+                Coords bottomLeftNeighbour = new Coords(entityOriginNode.x + i, entityOriginNode.y + entitySquareSide);
 
-        Coords topLeftNeighbour = new Coords(entityOriginNode.x - 1, entityOriginNode.y - 1);
-        Coords topRightNeighbour = new Coords(entityOriginNode.x + squareSide, entityOriginNode.y - 1);
-        Coords bottomLeftNeighbour = new Coords(entityOriginNode.x - 1, entityOriginNode.y + squareSide);
-        Coords bottomRightNeighbour = new Coords(entityOriginNode.x + squareSide, entityOriginNode.y + squareSide);
+                if (ValidateCoords(topLeftNeighbour))
+                    topLeftNeighbours.Add(topLeftNeighbour);
+                if (ValidateCoords(bottomLeftNeighbour))
+                    bottomLeftNeighbours.Add(bottomLeftNeighbour);
+            }
+            for (int i = entitySquareSide; i < entitySquareSide * 2 - 1; i++)
+            {
+                Coords topRightNeighbour = new Coords(entityOriginNode.x + i, entityOriginNode.y - 1);
+                Coords bottomRightNeighbour = new Coords(entityOriginNode.x + i, entityOriginNode.y + entitySquareSide);
 
-        if (ValidateCoords(topLeftNeighbour))
-            neighbours.Add(topLeftNeighbour);
-        if (ValidateCoords(topRightNeighbour))
-            neighbours.Add(topRightNeighbour);
-        if (ValidateCoords(bottomLeftNeighbour))
-            neighbours.Add(bottomLeftNeighbour);
-        if (ValidateCoords(bottomRightNeighbour))
-            neighbours.Add(bottomRightNeighbour);
+                if (ValidateCoords(topRightNeighbour))
+                    topRightNeighbours.Add(topRightNeighbour);
+                if (ValidateCoords(bottomRightNeighbour))
+                    bottomRightNeighbours.Add(bottomRightNeighbour);
+            }
+
+            if (topLeftNeighbours.Count == entitySquareSide)
+            {
+                MultipleCellLine topLeftLine = new MultipleCellLine(topLeftNeighbours, Direction.TopLeft);
+                neighbours.Add(topLeftLine);
+            }
+            if (topRightNeighbours.Count == entitySquareSide)
+            {
+                MultipleCellLine topRightLine = new MultipleCellLine(topRightNeighbours, Direction.TopRight);
+                neighbours.Add(topRightLine);
+            }
+            if (bottomLeftNeighbours.Count == entitySquareSide)
+            {
+                MultipleCellLine bottomLeftLine = new MultipleCellLine(bottomLeftNeighbours, Direction.BottomLeft);
+                neighbours.Add(bottomLeftLine);
+            }
+            if (bottomRightNeighbours.Count == entitySquareSide)
+            {
+                MultipleCellLine bottomRightLine = new MultipleCellLine(bottomRightNeighbours, Direction.BottomRight);
+                neighbours.Add(bottomRightLine);
+            }
+        }
 
         return neighbours;
     }
@@ -242,19 +348,39 @@ public class GridMap : MonoBehaviour
 
         if (newCoords != null)
         {
-            List<Coords> oldCoords = monsterToPlace.CurrentCoords;
-
-            foreach (Coords oldCoord in oldCoords)
-                GetGridObjectAtCoords(oldCoord).Monster = null;
-
             foreach (Coords newCoord in newCoords)
+            {
                 GetGridObjectAtCoords(newCoord).Monster = monsterToPlace;
+
+                if (_debugViewEnabled)
+                {
+                    TextMesh cellText = _cellOccupationIndicatingText[newCoord.x, newCoord.y];
+                    cellText.text = "False";
+                    cellText.color = Color.red;
+                }
+            }
 
             //Debug.Log($"Monster {monsterToPlace} placed on coords with origin ({targetCoords.x}, {targetCoords.y})");
         }
         else
         {
             Debug.LogWarning($"Cannot place monster {monsterToPlace} on coords ({targetCoords.x}, {targetCoords.y})");
+        }
+    }
+    public void FreeCurrentCoordsOfMonster(Monster monster)
+    {
+        List<Coords> freedCoords = monster.CurrentCoords;
+
+        foreach (Coords freedCoord in freedCoords)
+        {
+            GetGridObjectAtCoords(freedCoord).Monster = null;
+
+            if (_debugViewEnabled)
+            {
+                TextMesh cellText = _cellOccupationIndicatingText[freedCoord.x, freedCoord.y];
+                cellText.text = "True";
+                cellText.color = Color.green;
+            }
         }
     }
     //TODO: implement
@@ -264,14 +390,14 @@ public class GridMap : MonoBehaviour
     }
 
 
-    public List<Coords> FindPathForSingleCellEntity(Coords startCoords, Coords endCoords, bool accountForMonsters=false)
+    public List<Coords> FindPathForSingleCellEntity(Coords startCoords, Coords endCoords, Monster targetMonster=null)
     {
         if (startCoords == endCoords)
             return null;
 
         GridNode endNode = GetGridObjectAtCoords(endCoords);
 
-        if (accountForMonsters && endNode.HasImpassableObstacle || !accountForMonsters && !endNode.IsFree)
+        if (targetMonster != null && endNode.HasImpassableObstacle || targetMonster == null && !endNode.IsFree)
             return null;
 
         Queue<Coords> frontier = new Queue<Coords>();
@@ -287,18 +413,14 @@ public class GridMap : MonoBehaviour
             if (currentCoords == endCoords)
                 break;
 
-            List<Coords> neighbours = GetNeighboursForSingleCellEntity(currentCoords);
+            List<Coords> neighbours = GetValidSingleCellNeighbours(GetNeighboursForSingleCellEntity(currentCoords), targetMonster);
 
             foreach (Coords neighbour in neighbours)
-            {
-                GridNode neighbourNode = GetGridObjectAtCoords(neighbour);
-
-                if (!cameFrom.ContainsKey(neighbour) && (accountForMonsters && !neighbourNode.HasImpassableObstacle || !accountForMonsters && neighbourNode.IsFree))
+                if (!cameFrom.ContainsKey(neighbour))
                 {
                     frontier.Enqueue(neighbour);
                     cameFrom.Add(neighbour, currentCoords);
                 }
-            }
         }
 
         List<Coords> path = new List<Coords>();
@@ -313,68 +435,303 @@ public class GridMap : MonoBehaviour
             currentPathCoords = cameFrom[currentPathCoords];
         }
 
-        if (accountForMonsters)
+        if (targetMonster != null)
             path.Remove(endCoords);
 
         path.Reverse();
         return path;
     }
-    //TODO: implement
-    public List<List<Coords>> FindPathForMultipleCellEntity(Coords startCoords, Coords endCoords, Size entitySize)
+    // TODO: improve pathfinding
+    public List<List<Coords>> FindPathToFreeCellForMultipleCellEntity(Monster entity, Coords entityOriginCoords, Coords endCoords, Size entitySize)
     {
-        /*if (startCoords == endCoords)
-            return null;
-
-        if (!GetGridObjectAtCoords(endCoords).IsFree)
-            return null;
-
-        Queue<List<Coords>> frontier = new Queue<List<Coords>>();
-
-        List<List<Coords>> startingNeighbours = GetNeighboursWithoutDiagonals(startCoords, entitySize);
-        foreach (List<Coords> neighbour in startingNeighbours)
-            if (!(neighbour.All(neighbourNode => GetGridObjectAtCoords(neighbourNode).HasMonster) || neighbour.Any(neighbourNode => GetGridObjectAtCoords(neighbourNode).HasImpassableObstacle)))
-                frontier.Enqueue(neighbour);
-        
-        Dictionary<List<Coords>, List<Coords>> cameFrom = new Dictionary<List<Coords>, List<Coords>>();
-        foreach (List<Coords> neighbour in startingNeighbours)
-            cameFrom.Add(neighbour, null);
-
-        while (frontier.Count > 0)
+        if (entityOriginCoords == endCoords)
         {
-            List<Coords> currentNeighbour = frontier.Dequeue();
+            Debug.LogWarning("Trying to step on the same cell");
+            return null;
+        }
 
-            if (currentNode == endNode)
-                break;
+        int squareSide = GetSquareSideForEntitySize(entitySize);
 
-            List<List<Coords>> neighbours = GetNeighbours(currentNode);
+        List<Coords> endCoordsSquare = GetListOfMonsterCoords(endCoords, entitySize);
+        if (endCoordsSquare == null)
+        {
+            Debug.LogWarning("Cannot fit");
+            return null;
+        }
 
-            foreach (GridNode nextNode in neighbours)
+        if (!endCoordsSquare.All((coord) => GetGridObjectAtCoords(coord).IsFree))
+        {
+            foreach (Coords coord in endCoordsSquare)
             {
-                if (!cameFrom.ContainsKey(nextNode))
+                GridNode coordNode = GetGridObjectAtCoords(coord);
+                if (coordNode.HasMonster && coordNode.Monster != entity)
                 {
-                    frontier.Enqueue(nextNode);
-                    cameFrom.Add(nextNode, currentNode);
+                    Debug.LogWarning("Some of the square coordinates aren't free");
+
+                    foreach (Coords squareCoords in endCoordsSquare)
+                    {
+                        GridNode node = GetGridObjectAtCoords(squareCoords);
+                        Debug.Log(squareCoords.ToString() + ": " + node.IsFree);
+                        Debug.Log($"Obstacle: {node.Obstacle}");
+                        Debug.Log($"Monster: {node.Monster}");
+                    }
+
+                    return null;
                 }
             }
         }
 
-        List<GridNode> path = new List<GridNode>();
-        GridNode currentPathNode = endNode;
+        List<MultipleCellLine> initialNeighbours = GetValidMultipleCellNeighbours(GetNeighboursForMultipleCellEntity(entityOriginCoords, squareSide));
 
-        while (currentPathNode != startNode)
+        foreach (MultipleCellLine neighbour in initialNeighbours)
         {
-            if (!cameFrom.ContainsKey(currentPathNode))
-                return null;
+            Debug.Log($"Neighbour {neighbour.RelativeDirection}:");
 
-            path.Add(currentPathNode);
-            currentPathNode = cameFrom[currentPathNode];
+            foreach (Coords coord in neighbour.Coords)
+            {
+                Debug.Log(coord.ToString());
+            }
         }
 
-        path.Add(startNode);
-        path.Reverse();
+        Queue<MultipleCellLine> frontier = new Queue<MultipleCellLine>();
+        Dictionary<MultipleCellLine, MultipleCellLine> cameFrom = new Dictionary<MultipleCellLine, MultipleCellLine>();
 
-        return path;*/
-        return null;
+        foreach (MultipleCellLine neighbourLine in initialNeighbours) {
+            frontier.Enqueue(neighbourLine);
+            cameFrom.Add(neighbourLine, MultipleCellLine.Null);
+        }
+
+        List<Coords> verticalEndLineCoords = GetFirstLineOfCell(endCoords, squareSide, Direction.Bottom);
+        List<Coords> horizontalEndLineCoords = GetFirstLineOfCell(endCoords, squareSide, Direction.Right);
+
+        Debug.Log("Vertical destination line:");
+        foreach (Coords coord in verticalEndLineCoords)
+        {
+            Debug.Log(coord.ToString());
+        }
+        Debug.Log("Horizontal destination line:");
+        foreach (Coords coord in horizontalEndLineCoords)
+        {
+            Debug.Log(coord.ToString());
+        }
+
+        MultipleCellLine[] possibleEndLines =
+        {
+            new MultipleCellLine(verticalEndLineCoords, Direction.Left),
+            new MultipleCellLine(verticalEndLineCoords, Direction.Right),
+            new MultipleCellLine(horizontalEndLineCoords, Direction.Top),
+            new MultipleCellLine(horizontalEndLineCoords, Direction.Bottom)
+        };
+
+        while (frontier.Count > 0)
+        {
+            MultipleCellLine currentLine = frontier.Dequeue();
+
+            if (possibleEndLines.Contains(currentLine))
+                break;
+
+            string currLine = "";
+            foreach (Coords coord in currentLine.Coords)
+                currLine += coord.ToString() + " ";
+            //Debug.Log("Currently explored line: " + currLine);
+
+            Coords currentLineOriginCoords = currentLine.RelativeDirection switch
+            {
+                Direction.Top => currentLine.Coords[0],
+                Direction.Left => currentLine.Coords[0],
+                Direction.Right => new Coords(currentLine.Coords[0].x - (squareSide - 1), currentLine.Coords[0].y),
+                Direction.Bottom => new Coords(currentLine.Coords[0].x, currentLine.Coords[0].y - (squareSide - 1)),
+                _ => currentLine.Coords[0]
+            };
+            //Debug.Log($"Direction of currently explored line: {currentLine.RelativeDirection}");
+            //Debug.Log("Origin coords of a square of currently explored line: " + currentLineOriginCoords.ToString());
+
+            List<MultipleCellLine> neighbours = GetValidMultipleCellNeighbours(GetNeighboursForMultipleCellEntity(currentLineOriginCoords, squareSide));
+
+            foreach (MultipleCellLine neighbour in neighbours)
+            {
+                if (!cameFrom.ContainsKey(neighbour))
+                {
+                    frontier.Enqueue(neighbour);
+                    cameFrom.Add(neighbour, currentLine);
+                }
+            }
+        }
+
+        List<List<MultipleCellLine>> paths = new List<List<MultipleCellLine>>();
+
+        foreach (MultipleCellLine possibleEndLine in possibleEndLines)
+        {
+            List<MultipleCellLine> path = new List<MultipleCellLine>();
+            MultipleCellLine currentCheckedLine = possibleEndLine;
+
+            while (!initialNeighbours.Contains(currentCheckedLine))
+            {
+                if (!cameFrom.ContainsKey(currentCheckedLine))
+                {
+                    path = null;
+                    break;
+                }
+
+                path.Add(currentCheckedLine);
+                currentCheckedLine = cameFrom[currentCheckedLine];
+            }
+
+            if (initialNeighbours.Contains(currentCheckedLine))
+                path.Add(currentCheckedLine);
+
+            paths.Add(path);
+        }
+
+        paths = paths.Where(path => path != null).ToList();
+        if (paths.Count == 0)
+        {
+            Debug.Log("No path");
+            return null;
+        }
+
+        List<MultipleCellLine> shortestPath = paths[0];
+
+        foreach (List<MultipleCellLine> path in paths)
+            if (path.Count < shortestPath.Count)
+                shortestPath = path;
+
+        List<List<Coords>> finalPath = shortestPath.ConvertAll((pathLine) => pathLine.Coords);
+        Debug.Log(finalPath.Count);
+        finalPath.Reverse();
+
+        return finalPath;
+    }
+    // TODO: fix and finish
+    public List<List<Coords>> FindPathToMonsterForMultipleCellEntity(Monster entity, Monster monster)
+    {
+        int squareSide = GetSquareSideForEntitySize(entity.Stats.Size);
+        Coords entityOriginCoords = entity.CurrentCoordsOriginCell;
+
+        List<MultipleCellLine> possibleApproachPositions = GetNeighboursForMultipleCellEntity(monster.CurrentCoordsOriginCell, GetSquareSideForEntitySize(monster.Stats.Size), true);
+        List<List<List<Coords>>> paths = new List<List<List<Coords>>>();
+
+        foreach (MultipleCellLine approachPosition in possibleApproachPositions)
+        {
+            Coords positionOriginCell = approachPosition.RelativeDirection switch
+            {
+                Direction.Top => new Coords(approachPosition.Coords[0].x, approachPosition.Coords[0].y - (squareSide - 1)),
+                Direction.Left => new Coords(approachPosition.Coords[0].x - (squareSide - 1), approachPosition.Coords[0].y),
+                Direction.Right => approachPosition.Coords[0],
+                Direction.Bottom => approachPosition.Coords[0],
+
+                Direction.TopLeft => new Coords(approachPosition.Coords[0].x, approachPosition.Coords[0].y - (squareSide - 1)),
+                Direction.TopRight => new Coords(approachPosition.Coords[0].x, approachPosition.Coords[0].y - (squareSide - 1)),
+                Direction.BottomLeft => approachPosition.Coords[0],
+                Direction.BottomRight => approachPosition.Coords[0],
+                _ => approachPosition.Coords[0]
+            };
+
+            if (ValidateCoords(positionOriginCell))
+            {
+                List<List<Coords>> positionPath = FindPathToFreeCellForMultipleCellEntity(entity, entityOriginCoords, positionOriginCell, entity.Stats.Size);
+
+                if (positionPath != null)
+                    paths.Add(positionPath);
+            }
+        }
+
+        if (paths.Count == 0)
+        {
+            Debug.Log("No path");
+            return null;
+        }
+
+        List<List<Coords>> shortestPath = paths[0];
+
+        foreach (List<List<Coords>> path in paths)
+            if (path.Count < shortestPath.Count)
+                shortestPath = path;
+
+        return shortestPath;
+    }
+    private List<Coords> GetFirstLineOfCell(Coords originCell, int squareSide, Direction directionFromCell)
+    {
+        List<Coords> line = new List<Coords>();
+
+        if (directionFromCell == Direction.Top)
+        {
+            for (int i = 0; i > -squareSide; i--)
+            {
+                Coords lineCell = new Coords(originCell.x, originCell.y + i);
+
+                if (ValidateCoords(lineCell))
+                    line.Add(lineCell);
+            }
+        }
+        else if (directionFromCell == Direction.Bottom)
+        {
+            for (int i = 0; i < squareSide; i++)
+            {
+                Coords lineCell = new Coords(originCell.x, originCell.y + i);
+
+                if (ValidateCoords(lineCell))
+                    line.Add(lineCell);
+            }
+        }
+        else if (directionFromCell == Direction.Left)
+        {
+            for (int i = 0; i > -squareSide; i--)
+            {
+                Coords lineCell = new Coords(originCell.x + i, originCell.y);
+
+                if (ValidateCoords(lineCell))
+                    line.Add(lineCell);
+            }
+        }
+        else if (directionFromCell == Direction.Right)
+        {
+            for (int i = 0; i < squareSide; i++)
+            {
+                Coords lineCell = new Coords(originCell.x + i, originCell.y);
+
+                if (ValidateCoords(lineCell))
+                    line.Add(lineCell);
+            }
+        }
+
+        return line;
+    } 
+
+    private List<Coords> GetValidSingleCellNeighbours(List<Coords> neighbours, Monster targetMonster)
+    {
+        List<Coords> validNeighbours = new List<Coords>();
+
+        foreach (Coords neighbour in neighbours)
+        {
+            GridNode neighbourNode = GetGridObjectAtCoords(neighbour);
+
+            if (targetMonster == null)
+            {
+                if (neighbourNode.IsFree)
+                    validNeighbours.Add(neighbour);
+            }
+            else
+            {
+                if (neighbourNode.IsFree || neighbourNode.Monster == targetMonster)
+                    validNeighbours.Add(neighbour);
+            }
+        }
+
+        return validNeighbours;
+    }
+    private List<MultipleCellLine> GetValidMultipleCellNeighbours(List<MultipleCellLine> neighbourLines)
+    {
+        List<MultipleCellLine> validNeighbours = new List<MultipleCellLine>();
+
+        foreach (MultipleCellLine neighbourLine in neighbourLines)
+        {
+            if (!neighbourLine.Coords.Any(coord => GetGridObjectAtCoords(coord).HasImpassableObstacle) &&
+                !neighbourLine.Coords.TrueForAll(coord => GetGridObjectAtCoords(coord).HasMonster))
+                    validNeighbours.Add(neighbourLine);
+        }
+
+        return validNeighbours;
     }
 
     public List<Monster> FindMonstersInRadius(Coords entityOriginCoords, Size entitySize, int radius)

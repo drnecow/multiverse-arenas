@@ -9,14 +9,15 @@ public class MonsterDecisionController : MonoBehaviour
 {
     protected Monster _actor;
     protected Monster _closestTarget;
-    protected List<Coords> _pathToTarget;
+    protected List<Coords> _singleCellPathToTarget;
+    protected List<List<Coords>> _multipleCellPathToTarget;
 
     protected GridMap _map;
     protected DTreeRoot _decisionTreeRoot;
 
-    protected Dictionary<CombatActionType, CombatAction> _commonActions;
+    protected Dictionary<MonsterActionType, CombatAction> _commonActions;
 
-    public event Action OnEndTurn;
+    public event Action OnEnemyEndTurn;
     protected bool _currentAnimationStartedPlaying = false;
     protected float _currentAnimationLength;
 
@@ -25,21 +26,22 @@ public class MonsterDecisionController : MonoBehaviour
     {
         _actor = gameObject.GetComponent<Monster>();
 
-        _commonActions = new Dictionary<CombatActionType, CombatAction>()
+        _commonActions = new Dictionary<MonsterActionType, CombatAction>()
         {
-            {  CombatActionType.Move, _actor.CombatActions.FindFreeActionOfType(CombatActionType.Move) },
-            {  CombatActionType.Dash, _actor.CombatActions.FindMainActionOfType(CombatActionType.Dash) },
-            {  CombatActionType.Disengage, _actor.CombatActions.FindMainActionOfType(CombatActionType.Disengage) },
-            {  CombatActionType.Dodge, _actor.CombatActions.FindMainActionOfType(CombatActionType.Dodge) },
-            {  CombatActionType.Grapple, _actor.CombatActions.FindMainActionOfType(CombatActionType.Grapple) },
-            {  CombatActionType.Hide, _actor.CombatActions.FindMainActionOfType(CombatActionType.Hide) },
-            {  CombatActionType.Seek, _actor.CombatActions.FindMainActionOfType(CombatActionType.Seek) },
+            {  MonsterActionType.Move, _actor.CombatActions.FindFreeActionOfType(MonsterActionType.Move) },
+            {  MonsterActionType.Dash, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dash) },
+            {  MonsterActionType.Disengage, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Disengage) },
+            {  MonsterActionType.Dodge, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dodge) },
+            {  MonsterActionType.Grapple, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Grapple) },
+            {  MonsterActionType.Hide, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Hide) },
+            {  MonsterActionType.Seek, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Seek) },
         };
 
         foreach (CombatAction commonAction in _commonActions.Values)
             commonAction.OnActionAnimationStartedPlaying += SwitchToCurrentAnimationClip;
 
-        OnEndTurn += () => Debug.Log($"{_actor} ended turn");
+        OnEnemyEndTurn += () => Debug.Log($"{_actor} ended turn");
+        OnEnemyEndTurn += () => _actor.IsDisengaging = false;
     }
 
 
@@ -86,6 +88,7 @@ public class MonsterDecisionController : MonoBehaviour
 
         return enemies;
     }
+    // For single-celled actors
     public Monster FindClosestEnemy(out List<Coords> pathToClosestEnemy)
     {
         Dictionary<Monster, List<Coords>> pathsToAvailableEnemies = new Dictionary<Monster, List<Coords>>();
@@ -93,9 +96,9 @@ public class MonsterDecisionController : MonoBehaviour
 
         foreach (Monster enemy in _actor.VisibleTargets)
         {
-            List<Coords> pathToEnemy = _map.FindPathForSingleCellEntity(actorOriginCell, enemy.CurrentCoordsOriginCell, true);
+            List<Coords> pathToEnemy = _map.FindPathForSingleCellEntity(actorOriginCell, enemy.CurrentCoordsOriginCell, enemy);
 
-            if (pathToEnemy != null)
+            if (pathToEnemy != null && pathToEnemy.Count > 0)
                 pathsToAvailableEnemies.Add(enemy, pathToEnemy);
         }
 
@@ -121,6 +124,42 @@ public class MonsterDecisionController : MonoBehaviour
 
         return closestEnemy;
     }
+    // For multiple-celled actors
+    public Monster FindClosestEnemy(out List<List<Coords>> pathToClosestEnemy)
+    {
+        Dictionary<Monster, List<List<Coords>>> pathsToAvailableEnemies = new Dictionary<Monster, List<List<Coords>>>();
+
+        foreach (Monster enemy in _actor.VisibleTargets)
+        {
+            List<List<Coords>> pathToEnemy = _map.FindPathToMonsterForMultipleCellEntity(_actor, enemy);
+
+            if (pathToEnemy != null)
+                pathsToAvailableEnemies.Add(enemy, pathToEnemy);
+        }
+
+        if (pathsToAvailableEnemies.Count == 0)
+        {
+            pathToClosestEnemy = null;
+            return null;
+        }
+
+        Monster closestEnemy = pathsToAvailableEnemies.First().Key;
+        pathToClosestEnemy = pathsToAvailableEnemies.First().Value;
+
+        foreach (Monster availableEnemy in pathsToAvailableEnemies.Keys)
+        {
+            List<List<Coords>> currentPath = pathsToAvailableEnemies[availableEnemy];
+
+            if (currentPath.Count < pathToClosestEnemy.Count)
+            {
+                closestEnemy = availableEnemy;
+                pathToClosestEnemy = currentPath;
+            }
+        }
+
+        return closestEnemy;
+    }
+
     public void DoSequenceOfActionsAndEndTurn(Action monsterAction, params Action[] additionalActions)
     {
         List<Action> monsterActions = new List<Action>() { monsterAction };
@@ -144,15 +183,18 @@ public class MonsterDecisionController : MonoBehaviour
         }
 
         Debug.Log($"Total actions played: {monsterActions.Count}");
-        OnEndTurn?.Invoke();
+        OnEnemyEndTurn?.Invoke();
     }
-    protected void SwitchToCurrentAnimationClip(float currentClipLength)
+    protected void SwitchToCurrentAnimationClip(Monster animatedMonster, float currentClipLength)
     {
-        _currentAnimationStartedPlaying = true;
-        _currentAnimationLength = currentClipLength;
+        if (animatedMonster == _actor)
+        {
+            _currentAnimationStartedPlaying = true;
+            _currentAnimationLength = currentClipLength;
+        }
     }
     public void SkipTurn()
     {
-        OnEndTurn?.Invoke();
+        OnEnemyEndTurn?.Invoke();
     }
 }

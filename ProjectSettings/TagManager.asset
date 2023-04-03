@@ -47,6 +47,9 @@ TagManager:
   - name: Obstacles
     uniqueID: 1722666703
     locked: 0
+  - name: Dead monsters
+    uniqueID: 170708229
+    locked: 0
   - name: Monsters
     uniqueID: 467305535
     locked: 0

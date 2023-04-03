@@ -8,11 +8,13 @@ public class MapHighlight : MonoBehaviour
     List<Coords> _currentlyHighlightedCells;
 
     [SerializeField] private GameObject _highlightSquarePrefab;
-    [SerializeField] private GridMap _map;
+    [SerializeField] private Transform _highlightParent;
+    private GridMap _map;
 
 
     private void Awake()
     {
+        _map = gameObject.GetComponent<GridMap>();
         _cells = new GameObject[_map.Width, _map.Height];
         _currentlyHighlightedCells = new List<Coords>();
 
@@ -22,33 +24,33 @@ public class MapHighlight : MonoBehaviour
             {
                 GameObject square = Instantiate(_highlightSquarePrefab);
                 square.transform.position = _map.XYToWorldPosition(new Coords(i, j));
-                square.transform.SetParent(transform);
+                square.transform.SetParent(_highlightParent);
 
                 _cells[i, j] = square;
             }
     }
 
-    public void HighlightCells(List<Coords> cells)
+    public void HighlightCells(List<Coords> cells, Color cellColor)
     {
         foreach (Coords cell in cells)
             if (_map.ValidateCoords(cell))
             {
                 GameObject square = _cells[cell.x, cell.y];
 
-                Color color = square.GetComponent<SpriteRenderer>().color;
+                Color color = cellColor;
                 color.a = 1f;
                 square.GetComponent<SpriteRenderer>().color = color;
 
                 _currentlyHighlightedCells.Add(cell);
             }
     }
-    public void HighlightCell(Coords cell)
+    public void HighlightCell(Coords cell, Color cellColor)
     {
         if (_map.ValidateCoords(cell))
         {
             GameObject square = _cells[cell.x, cell.y];
 
-            Color color = square.GetComponent<SpriteRenderer>().color;
+            Color color = cellColor;
             color.a = 1f;
             square.GetComponent<SpriteRenderer>().color = color;
 

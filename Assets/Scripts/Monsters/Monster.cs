@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,14 +8,23 @@ using Project.Dice;
 public class Monster : MonoBehaviour
 {
     [SerializeField] private bool _isPlayerControlled;
-    public bool IsPlayerControlled { get => _isPlayerControlled; set => _isPlayerControlled = value; }
+    public bool IsPlayerControlled { get => _isPlayerControlled; set { _isPlayerControlled = value; OnMonsterAllegianceChanged?.Invoke(_isPlayerControlled); } }
 
-    [field: SerializeField] public CombatDependencies CombatDependencies { get; private set; }
+    public CombatDependencies CombatDependencies { get; private set; }
+    public void SetCombatDependencies(CombatDependencies combatDependencies)
+    {
+        CombatDependencies = combatDependencies;
+    }
 
     public Animator Animator { get; private set; }
+    public MonsterAnimator MonsterAnimator { get; private set; }
 
     [field: SerializeField] public string Name { get; private set; }
     [field: SerializeField] public MonsterStats Stats { get; private set; }
+    public void SetStats(MonsterStats stats)
+    {
+        Stats = stats;
+    }
     [SerializeField] private int _numberOfAttacks;
 
     [field: SerializeField] public MonsterCombatActions CombatActions { get; private set; }
@@ -75,15 +85,35 @@ public class Monster : MonoBehaviour
     private bool _reactionAvailable = true;
     public bool ReactionAvailable { get => _reactionAvailable; set => _reactionAvailable = value; }
 
+    private bool _isDisengaging = false;
+    public bool IsDisengaging { get => _isDisengaging; set => _isDisengaging = value; }
+    private bool _isDodging = false;
+    public bool IsDodging { get => _isDodging; set => _isDodging = value; }
+    private int _stealthRoll = 0;
+    public int StealthRoll { get => _stealthRoll; set => _stealthRoll = value; }
+
     [field: SerializeField] public List<Monster> VisibleTargets { get; private set; }
-    
+
+
+    public event Action<bool> OnMonsterAllegianceChanged;
+
+    public event Action<int> OnMonsterHPChanged;
+    public event Action<Monster> OnMonsterHPReducedToZero;
+
 
     private void Awake()
     {
         Animator = gameObject.GetComponent<Animator>();
+        MonsterAnimator = gameObject.GetComponent<MonsterAnimator>();
         ActiveConditions = new HashSet<Condition>();
     }
 
+    public int RollInitiative()
+    {
+        int initiativeRoll = Dice.RollD20() + Stats.Abilities.GetAbilityModifier(Ability.Dexterity);
+        CombatDependencies.Instance.EventsLogger.LogLocalInfo(this, $"Initiative: {initiativeRoll}");
+        return initiativeRoll;
+    }
     public bool RollSkillContest(Skill thisMonsterSkill, RollMode thisMonsterRollMode, Monster enemy, Skill enemySkill, RollMode enemyRollMode)
     {
         int thisMonsterSkillModifier = Stats.GetSkillModifier(thisMonsterSkill);
@@ -99,6 +129,7 @@ public class Monster : MonoBehaviour
     }
     public int TakeDamage(int damagePoints, DamageType damageType)
     {
+        Debug.Log($"Current HP: {Stats.CurrentHP}");
         int totalDamageTaken = damagePoints;
 
         if (Stats.DamageImmunities.Contains(damageType))
@@ -123,6 +154,13 @@ public class Monster : MonoBehaviour
             Debug.Log($"{Name} takes {damagePoints} points of {damageType} damage");
             Stats.CurrentHP -= damagePoints;
         }
+
+        if (damagePoints > 0)
+            OnMonsterHPChanged?.Invoke(Stats.CurrentHP);
+
+        if (Stats.CurrentHP == 0)
+            OnMonsterHPReducedToZero?.Invoke(this);
+        Debug.Log($"Current HP: {Stats.CurrentHP}");
 
         return totalDamageTaken;
     }
