@@ -22,7 +22,7 @@ public class PlayerMeleeAttackPanel : PlayerActionPanel
             Button combatActionButton = buttonPrefab.GetComponent<Button>();
             combatActionButton.GetComponentInChildren<TextMeshProUGUI>().text = meleeAttack.Name;
             //combatActionButton.onClick.AddListener();
-            combatActionButton.onClick.AddListener(playerInputSystem.UpdateButtonsInteractability);
+            //combatActionButton.onClick.AddListener(playerInputSystem.UpdateButtonsInteractability);
 
             _buttons.Add(combatActionButton);
         }

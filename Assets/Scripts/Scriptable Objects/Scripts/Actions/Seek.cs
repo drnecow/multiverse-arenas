@@ -12,11 +12,16 @@ public class Seek : CombatAction
         Identifier = MonsterActionType.Seek;
     }
 
-    public override void DoAction(Monster actor)
+    public override void DoAction(Monster actor, CombatActionType consumedAction)
     {
-        base.DoAction(actor);
-        
+        base.DoAction(actor, consumedAction);      
 
         Debug.Log($"{actor.Name} is Seeking");
+    }
+
+    // TODO: implement this method properly
+    public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
+    {
+        return base.CheckPlayerButtonInteractabilityCondition(actor, usedAction);
     }
 }

@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ce4b515357bfc34db1eca0d9251d2a9, type: 3}
   m_Name: Seek
   m_EditorClassIdentifier: 
-  _name: Seek
-  _identifier: 7
+  <Name>k__BackingField: Seek
+  <Identifier>k__BackingField: 7
+  <ConsumesActionType>k__BackingField: 2

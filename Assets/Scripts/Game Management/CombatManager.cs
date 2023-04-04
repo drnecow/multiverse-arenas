@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Project.Constants;
 
 public class CombatManager : MonoBehaviour
 {
@@ -116,17 +117,21 @@ public class CombatManager : MonoBehaviour
         foreach (Monster combatant in monsterInitiative.Keys)
             _initiativeOrder.Enqueue(combatant);
     }
-
     private void ResolveNewTurn()
     {
         if (!_combatStopped)
         {
             Monster actor = _initiativeOrder.Dequeue();
+            RestoreMonsterResources(actor);
 
-            actor.MainActionAvailable = true;
-            actor.BonusActionAvailable = true;
-
-            actor.IsDodging = false;
+            HashSet<Monster> opposingMonsters = actor.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
+            foreach (Monster opposingMonster in opposingMonsters)
+            {
+                if (!actor.VisibleTargets.Contains(opposingMonster))
+                    opposingMonster.IsHiding = true;
+                else
+                    opposingMonster.IsHiding = false;
+            }
 
             if (actor.IsPlayerControlled)
             {
@@ -137,9 +142,37 @@ public class CombatManager : MonoBehaviour
                 actor.GetComponent<MonsterDecisionController>().MakeDecision();
 
             _initiativeOrder.Enqueue(actor);
+
         }
     }
+    private void RestoreMonsterResources(Monster monster)
+    {
+        monster.MainActionAvailable = true;
+        monster.BonusActionAvailable = true;
+        monster.RemainingSpeed.SetSpeedValues(monster.Stats.Speed); // At the start of the monster's turn, its speed restores to maximum
 
+        monster.IsDodging = false;
+    }
+
+    public void HandleMonsterEnteringStealth(Monster monster, int stealthRoll)
+    {
+        HashSet<Monster> oppositeSideMonsters = monster.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
+
+        foreach (Monster opposingMonster in oppositeSideMonsters)
+        {
+            int opposingMonsterPerception = opposingMonster.Stats.GetPassiveSkillValue(Skill.Perception);
+            
+            if (opposingMonsterPerception < stealthRoll)
+                opposingMonster.VisibleTargets.Remove(monster);
+        }
+    }
+    public void HandleMonsterBreakingStealth(Monster monster)
+    {
+        HashSet<Monster> oppositeSideMonsters = monster.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
+
+        foreach (Monster opposingMonster in oppositeSideMonsters)
+            opposingMonster.VisibleTargets.Add(monster);
+    }
     private void RemoveMonsterFromGame(Monster monster)
     {
         Debug.LogWarning($"Removing {monster} from game");

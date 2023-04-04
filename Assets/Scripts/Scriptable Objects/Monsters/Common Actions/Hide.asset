@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97af8da6c6c61b546b14b7d8dca2817e, type: 3}
   m_Name: Hide
   m_EditorClassIdentifier: 
-  _name: Hide
-  _identifier: 6
+  <Name>k__BackingField: Hide
+  <Identifier>k__BackingField: 6
+  <ConsumesActionType>k__BackingField: 2

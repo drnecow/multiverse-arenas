@@ -34,6 +34,13 @@ public abstract class Attack : ScriptableObject
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
 
+        if (actor.StealthRoll > -1000)
+        {
+            actor.StealthRoll = -1000;
+            _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
+            _combatDependencies.EventsLogger.LogLocalInfo(actor, "Stealth broken");
+        }
+
         Debug.Log($"{actor.Name} is making {Name}");
 
         //Log attack name

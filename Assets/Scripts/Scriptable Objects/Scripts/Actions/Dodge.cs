@@ -12,14 +12,19 @@ public class Dodge : CombatAction
         Identifier = MonsterActionType.Dodge;
     }
 
-    public override void DoAction(Monster actor)
+    public override void DoAction(Monster actor, CombatActionType consumedAction)
     {
-        base.DoAction(actor);
+        base.DoAction(actor, consumedAction);
 
         Debug.Log($"{actor.Name} is Dodging");
 
         actor.IsDodging = true;
         OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
+    }
+
+    public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
+    {
+        return base.CheckPlayerButtonInteractabilityCondition(actor, usedAction);
     }
 }
 

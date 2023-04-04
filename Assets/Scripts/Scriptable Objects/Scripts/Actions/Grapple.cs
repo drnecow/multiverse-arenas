@@ -12,10 +12,16 @@ public class Grapple : CombatAction
         Identifier = MonsterActionType.Grapple;
     }
 
-    public override void DoAction(Monster actor, Monster target)
+    public override void DoAction(Monster actor, Monster target, CombatActionType consumedAction)
     {
-        base.DoAction(actor);
+        base.DoAction(actor, consumedAction);
 
         Debug.Log($"{actor.Name} is trying to Grapple {target.Name}");
+    }
+
+    // TODO: implement this method properly
+    public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
+    {
+        return base.CheckPlayerButtonInteractabilityCondition(actor, usedAction);
     }
 }

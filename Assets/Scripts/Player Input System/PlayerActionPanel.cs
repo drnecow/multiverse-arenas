@@ -8,15 +8,19 @@ public class PlayerActionPanel : MonoBehaviour
     [SerializeField] protected GameObject _buttonPrefab;
     [SerializeField] protected RectTransform _buttonsParent;
 
-    protected HashSet<Button> _buttons;
+    protected List<Button> _buttons;
     protected Monster _actor;
 
 
     private void Awake()
     {
-        _buttons = new HashSet<Button>();
+        _buttons = new List<Button>();
     }
 
+    public virtual void SetAllButtonsInteractabilityByCondition()
+    {
+
+    }
     public void SetAllButtonsNonInteractable()
     {
         foreach (Button button in _buttons)

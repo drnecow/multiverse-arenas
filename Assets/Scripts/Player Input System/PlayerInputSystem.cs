@@ -29,6 +29,7 @@ public class PlayerInputSystem : MonoBehaviour
     public void FillActionPanels(Monster actor)
     {
         _actor = actor;
+        Debug.Log($"Actor (PlayerInputSystem): {_actor}");
 
         List<CombatAction> freeActions = _actor.CombatActions.FreeActions;
         MeleeAttackIntDictionary meleeAttacks = _actor.CombatActions.MeleeAttacks;
@@ -40,6 +41,10 @@ public class PlayerInputSystem : MonoBehaviour
         {
             _freeActionsPanel.gameObject.SetActive(true);
             _freeActionsPanel.CreateButtons(freeActions, CombatActionType.FreeAction, _actor, this);
+            _freeActionsPanel.SetAllButtonsInteractabilityByCondition();
+
+            foreach (CombatAction freeAction in freeActions)
+                freeAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
         }
         else
             _freeActionsPanel.gameObject.SetActive(false);
@@ -48,6 +53,10 @@ public class PlayerInputSystem : MonoBehaviour
         {
             _meleeAttackPanel.gameObject.SetActive(true);
             _meleeAttackPanel.CreateButtons(meleeAttacks, actor, this);
+            _meleeAttackPanel.SetAllButtonsInteractabilityByCondition();
+
+            foreach (MeleeAttack meleeAttack in meleeAttacks.Keys)
+                meleeAttack.OnAttackAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
         }
         else
             _meleeAttackPanel.gameObject.SetActive(false);
@@ -56,6 +65,10 @@ public class PlayerInputSystem : MonoBehaviour
         {
             _rangedAttackPanel.gameObject.SetActive(true);
             _rangedAttackPanel.CreateButtons(rangedAttacks, actor, this);
+            _rangedAttackPanel.SetAllButtonsInteractabilityByCondition();
+
+            foreach (RangedAttack rangedAttack in rangedAttacks.Keys)
+                rangedAttack.OnAttackAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
         }
         else
             _rangedAttackPanel.gameObject.SetActive(false);
@@ -64,6 +77,10 @@ public class PlayerInputSystem : MonoBehaviour
         {
             _mainActionsPanel.gameObject.SetActive(true);
             _mainActionsPanel.CreateButtons(mainActions, CombatActionType.MainAction, actor, this);
+            _mainActionsPanel.SetAllButtonsInteractabilityByCondition();
+
+            foreach (CombatAction mainAction in mainActions)
+                mainAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
         }
         else
             _mainActionsPanel.gameObject.SetActive(false);
@@ -72,22 +89,61 @@ public class PlayerInputSystem : MonoBehaviour
         {
             _bonusActionsPanel.gameObject.SetActive(true);
             _bonusActionsPanel.CreateButtons(bonusActions, CombatActionType.BonusAction, actor, this);
+            _bonusActionsPanel.SetAllButtonsInteractabilityByCondition();
+
+            foreach (CombatAction bonusAction in bonusActions)
+                bonusAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
         }
         else
             _bonusActionsPanel.gameObject.SetActive(false);
     }
     public void ClearActionPanels()
     {
-        _freeActionsPanel.DestroyAllButtons();
-        _meleeAttackPanel.DestroyAllButtons();
-        _rangedAttackPanel.DestroyAllButtons();
-        _mainActionsPanel.DestroyAllButtons();
-        _bonusActionsPanel.DestroyAllButtons();
+        List<PlayerActionPanel> panels = GetAllActiveActionPanels();
+
+        foreach (PlayerActionPanel panel in panels)
+            panel.DestroyAllButtons();
     }
 
-    public void UpdateButtonsInteractability()
+    /*public void UpdateButtonsInteractability()
     {
+        List<PlayerActionPanel> panels = GetAllActionPanels();
+
+        foreach (PlayerActionPanel panel in panels)
+            panel.SetAllButtonsInteractabilityByCondition();
+
         Debug.Log("Updating interactability of all buttons");
+    }*/
+    private IEnumerator SuspendButtonsAvailabilityFor(float timeInSeconds)
+    {
+        List<PlayerActionPanel> panels = GetAllActiveActionPanels();
+
+        foreach (PlayerActionPanel panel in panels)
+            panel.SetAllButtonsNonInteractable();
+        _endTurnButton.interactable = false;
+
+        yield return new WaitForSeconds(timeInSeconds);
+
+        foreach (PlayerActionPanel panel in panels)
+            panel.SetAllButtonsInteractabilityByCondition();
+        _endTurnButton.interactable = true;
+    }
+    private List<PlayerActionPanel> GetAllActiveActionPanels()
+    {
+        List<PlayerActionPanel> allPanels = new List<PlayerActionPanel>();
+
+        if (_freeActionsPanel.gameObject.activeSelf)
+            allPanels.Add(_freeActionsPanel);
+        if (_meleeAttackPanel.gameObject.activeSelf)
+            allPanels.Add(_meleeAttackPanel);
+        if (_rangedAttackPanel.gameObject.activeSelf)
+            allPanels.Add(_rangedAttackPanel);
+        if (_mainActionsPanel.gameObject.activeSelf)
+            allPanels.Add(_mainActionsPanel);
+        if (_bonusActionsPanel.gameObject.activeSelf)
+            allPanels.Add(_bonusActionsPanel);
+
+        return allPanels;
     }
     private void EndTurn()
     {

@@ -252,6 +252,10 @@ public class MonsterStats : ScriptableObject
 
         return skillModifier;
     }
+    public int GetPassiveSkillValue(Skill skill)
+    {
+        return 10 + GetSkillModifier(skill);
+    }
     public int GetSavingThrowBonus(Ability ability)
     {
         return Abilities.GetAbilityModifier(ability) + (SaveProficiencies.IsProficientInSavesOf(ability) ? _proficiencyBonus : 0);

@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7553dcf93ab33dc47bbc12029b289dcc, type: 3}
   m_Name: Dodge
   m_EditorClassIdentifier: 
-  _name: Dodge
-  _identifier: 4
+  <Name>k__BackingField: Dodge
+  <Identifier>k__BackingField: 4
+  <ConsumesActionType>k__BackingField: 2

@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0363fd3af8181f74c837c44de7d880da, type: 3}
   m_Name: Disengage
   m_EditorClassIdentifier: 
-  _name: Disengage
-  _identifier: 3
+  <Name>k__BackingField: Disengage
+  <Identifier>k__BackingField: 3
+  <ConsumesActionType>k__BackingField: 2

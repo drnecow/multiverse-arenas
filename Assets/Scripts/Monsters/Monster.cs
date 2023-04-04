@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Project.Constants;
 using Project.Dice;
+using Project.DictionaryStructs;
 
 public class Monster : MonoBehaviour
 {
@@ -89,11 +90,17 @@ public class Monster : MonoBehaviour
     public bool IsDisengaging { get => _isDisengaging; set => _isDisengaging = value; }
     private bool _isDodging = false;
     public bool IsDodging { get => _isDodging; set => _isDodging = value; }
-    private int _stealthRoll = 0;
+    private bool _isHiding = false;
+    public bool IsHiding { get => _isHiding; set => _isHiding = value; }
+    private int _stealthRoll = -1000;
     public int StealthRoll { get => _stealthRoll; set => _stealthRoll = value; }
 
-    [field: SerializeField] public List<Monster> VisibleTargets { get; private set; }
+    public SpeedValues RemainingSpeed { get; private set; }
 
+    
+    
+
+    public HashSet<Monster> VisibleTargets { get; private set; }
 
     public event Action<bool> OnMonsterAllegianceChanged;
 
@@ -106,6 +113,9 @@ public class Monster : MonoBehaviour
         Animator = gameObject.GetComponent<Animator>();
         MonsterAnimator = gameObject.GetComponent<MonsterAnimator>();
         ActiveConditions = new HashSet<Condition>();
+        VisibleTargets = new HashSet<Monster>();
+
+        RemainingSpeed = new SpeedValues(Stats.Speed);
     }
 
     public int RollInitiative()
@@ -114,18 +124,25 @@ public class Monster : MonoBehaviour
         CombatDependencies.Instance.EventsLogger.LogLocalInfo(this, $"Initiative: {initiativeRoll}");
         return initiativeRoll;
     }
-    public bool RollSkillContest(Skill thisMonsterSkill, RollMode thisMonsterRollMode, Monster enemy, Skill enemySkill, RollMode enemyRollMode)
+    public int MakeSkillCheck(Skill skill)
     {
-        int thisMonsterSkillModifier = Stats.GetSkillModifier(thisMonsterSkill);
-        int enemySkillModifier = enemy.Stats.GetSkillModifier(enemySkill);
+        RollMode skillCheckRollMode = ResolveAdvantageAndDisadvantageToSkillCheck(skill);
+        int skillModifier = Stats.GetSkillModifier(skill);
 
-        int thisMonsterRoll = Dice.RollD20(rollMode: thisMonsterRollMode) + thisMonsterSkillModifier;
-        int enemyRoll = Dice.RollD20(rollMode: enemyRollMode) + enemySkillModifier;
+        int skillRoll = Dice.RollD20(rollMode: skillCheckRollMode) + skillModifier;
+        return skillRoll;
+    }
+    public bool MakeSkillCheckAgainstDC(Skill skill, int dc)
+    {
+        int skillRoll = MakeSkillCheck(skill);
+        return skillRoll >= dc;
+    }
+    public bool RollSkillContest(Skill thisMonsterSkill, Monster enemy, Skill enemySkill)
+    {
+        int thisMonsterRoll = MakeSkillCheck(thisMonsterSkill);
+        int enemyRoll = enemy.MakeSkillCheck(enemySkill);
 
-        if (thisMonsterRoll >= enemyRoll)
-            return true;
-        else
-            return false;
+        return (thisMonsterRoll >= enemyRoll);
     }
     public int TakeDamage(int damagePoints, DamageType damageType)
     {
@@ -174,10 +191,8 @@ public class Monster : MonoBehaviour
         Monster grappler = ConditionSourceMonsters[Condition.Grappled];
 
         Skill thisMonsterSkill = useAthletics ? Skill.Athletics : Skill.Acrobatics;
-        RollMode thisMonsterRollMode = ResolveAdvantageAndDisadvantageToSkillCheck(thisMonsterSkill);
-        RollMode enemyRollMode = grappler.ResolveAdvantageAndDisadvantageToSkillCheck(Skill.Athletics);
 
-        bool success = RollSkillContest(thisMonsterSkill, thisMonsterRollMode, grappler, Skill.Athletics, enemyRollMode);
+        bool success = RollSkillContest(thisMonsterSkill, grappler, Skill.Athletics);
 
         if (success)
         {
@@ -189,7 +204,7 @@ public class Monster : MonoBehaviour
             Debug.Log($"{Name} could not escape grapple from {grappler.Name}");
     }
 
-    //TODO: implement this method
+    //TODO: implement this method; include pack tactics
     public RollMode ResolveAdvantageAndDisadvantageToMeleeAttack(Monster target)
     {
         return RollMode.Normal;

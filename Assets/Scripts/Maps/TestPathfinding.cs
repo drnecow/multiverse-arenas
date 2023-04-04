@@ -12,7 +12,7 @@ public class TestPathfinding : MonoBehaviour
     private Coords _currentMouseCoords;
 
 
-    private void Start()
+    /*private void Start()
     {
         _currentMouseCoords = _map.WorldPositionToXY(Utils.GetMouseWorldPosition());
         List<List<Coords>> path = _map.FindPathToMonsterForMultipleCellEntity(_monster, _monster.VisibleTargets[0]);
@@ -25,7 +25,7 @@ public class TestPathfinding : MonoBehaviour
             foreach (List<Coords> pathLine in path)
                 _highlight.HighlightCells(pathLine, Color.green);
         }
-    }
+    }*/
 
     /*private void Update()
     {

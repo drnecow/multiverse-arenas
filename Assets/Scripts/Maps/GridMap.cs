@@ -392,6 +392,9 @@ public class GridMap : MonoBehaviour
 
     public List<Coords> FindPathForSingleCellEntity(Coords startCoords, Coords endCoords, Monster targetMonster=null)
     {
+        if (!ValidateCoords(endCoords))
+            return null;
+
         if (startCoords == endCoords)
             return null;
 

@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Name>k__BackingField: Dash
   <Identifier>k__BackingField: 2
+  <ConsumesActionType>k__BackingField: 2
   _speedPerCellInSeconds: 0.25

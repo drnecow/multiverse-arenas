@@ -137,6 +137,20 @@ namespace Project.DictionaryStructs
 
             return skillProficiencyBonus;
         }
+        public Ability GetSkillRelatedAbility(Skill skill)
+        {
+            Ability ability = skill switch
+            {
+                Skill.Athletics => Ability.Strength,
+                Skill.Acrobatics => Ability.Dexterity,
+                Skill.Perception => Ability.Wisdom,
+                Skill.Stealth => Ability.Dexterity,
+                Skill.Performance => Ability.Charisma,
+                _ => 0
+            };
+
+            return ability;
+        }
     }
 
     [System.Serializable]
@@ -232,7 +246,27 @@ namespace Project.DictionaryStructs
             }
         }
 
+        public SpeedValues()
+        {
+            _walk = 0;
+            _fly = 0;
+            _swim = 0;
+            _climb = 0;
+            _burrow = 0;
+        }
+        public SpeedValues(SpeedValues referenceSpeedValues)
+        {
+            SetSpeedValues(referenceSpeedValues);
+        }
 
+        public void SetSpeedValues(SpeedValues referenceSpeedValues)
+        {
+            _walk = referenceSpeedValues.Walk;
+            _fly = referenceSpeedValues.Fly;
+            _swim = referenceSpeedValues.Swim;
+            _climb = referenceSpeedValues.Climb;
+            _burrow = referenceSpeedValues.Burrow;
+        }
         public int GetSpeedCells(Speed speed)
         {
             int targetSpeed = speed switch

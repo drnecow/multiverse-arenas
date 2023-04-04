@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Project.Constants;
-using Project.Utils;
 
 [CreateAssetMenu(fileName = "Move/Dash", menuName = "Scriptable Objects/Common Action/Move")]
 public class Move : CombatAction
@@ -12,9 +11,9 @@ public class Move : CombatAction
 
     // TODO: add opportunity attacks that trigger if actor is not disengaging
 
-    public override void DoAction(Monster actor, List<Coords> path)
+    public override void DoAction(Monster actor, List<Coords> path, CombatActionType consumedAction)
     {
-        base.DoAction(actor);
+        base.DoAction(actor, consumedAction);
 
         actor.MonsterAnimator.OnActionAnimationFinished -= HandleAnimationFinish;
         actor.MonsterAnimator.OnActionAnimationFinished += HandleAnimationFinish;
@@ -44,6 +43,9 @@ public class Move : CombatAction
 
         _combatDependencies.Map.PlaceMonsterOnCoords(actor, endPathCell);
 
+        if (Identifier == MonsterActionType.Move)
+            actor.RemainingSpeed.Walk -= path.Count * 5;
+
 
         string pathString = "";
 
@@ -52,9 +54,10 @@ public class Move : CombatAction
 
         Debug.Log($"{actor.Name} is Moving along path {pathString}");
     }
-    public override void DoAction(Monster actor, List<List<Coords>> path)
+    // TODO: fix and finish this method
+    public override void DoAction(Monster actor, List<List<Coords>> path, CombatActionType consumedAction)
     {
-        base.DoAction(actor);
+        base.DoAction(actor, consumedAction);
 
         Debug.Log("Path: ");
         foreach(List<Coords> pathLine in path)
@@ -141,5 +144,30 @@ public class Move : CombatAction
     {
         if (actionType == MonsterActionType.Move)
             actor.Animator.SetTrigger("StoppedMovement");
+    }
+
+    public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
+    {
+        switch (Identifier)
+        {
+            case MonsterActionType.Move:
+                return actor.RemainingSpeed.Walk >= 5;
+
+            case MonsterActionType.Dash:
+                switch (usedAction)
+                {
+                    case CombatActionType.FreeAction:
+                        return true;
+                    case CombatActionType.BonusAction:
+                        return actor.BonusActionAvailable;
+                    case CombatActionType.MainAction:
+                        return actor.MainActionAvailable;
+                    default:
+                        return false;
+                }
+
+            default:
+                return false;
+        }
     }
 }

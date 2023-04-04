@@ -30,9 +30,9 @@ public class GiantRatDecisionController : MonsterDecisionController
         DTreeLeaf moveToClosestEnemyAndAttack = new DTreeLeaf("Move to closest enemy and attack it",
             () => { Action moveAction;
                 if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _singleCellPathToTarget);
+                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _singleCellPathToTarget, CombatActionType.FreeAction);
                 else
-                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _multipleCellPathToTarget);
+                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _multipleCellPathToTarget, CombatActionType.FreeAction);
 
                 DoSequenceOfActionsAndEndTurn(moveAction, () => _biteAttack.MakeMeleeAttack(_actor, _closestTarget));
             });
@@ -40,15 +40,15 @@ public class GiantRatDecisionController : MonsterDecisionController
         DTreeLeaf dashToClosestEnemy = new DTreeLeaf("Dash to closest enemy",
             () => { Action dashAction;
                 if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _singleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)));
+                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _singleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)), CombatActionType.MainAction);
                 else
-                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _multipleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)));
+                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _multipleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)), CombatActionType.MainAction);
 
                 DoSequenceOfActionsAndEndTurn(dashAction);
             });
 
         DTreeLeaf takeDodgeAction = new DTreeLeaf("Take Dodge action",
-            () => DoSequenceOfActionsAndEndTurn(() => _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dodge).DoAction(_actor)));
+            () => DoSequenceOfActionsAndEndTurn(() => _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dodge).DoAction(_actor, CombatActionType.MainAction)));
 
         DTreeLeaf skipTurn = new DTreeLeaf("Nothing to do, skip turn", SkipTurn);
 
