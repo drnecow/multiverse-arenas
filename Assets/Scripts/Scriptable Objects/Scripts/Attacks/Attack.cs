@@ -46,6 +46,11 @@ public abstract class Attack : ScriptableObject
         //Log attack name
         _combatDependencies.EventsLogger.LogLocalInfo(actor, Name);
 
+        actor.MainActionAvailable = false;
+        actor.AttackMainActionAvailable = false;
+        actor.RemainingTotalAttacks--;
+        actor.RemainingAttacks[this]--;
+
         //Play attack animation
         float animationClipLength = PlayAttackAnimation(actor, target);
         OnAttackAnimationStartedPlaying.Invoke(actor, animationClipLength);

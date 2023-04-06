@@ -2,21 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
-public class PlayerActionPanel : MonoBehaviour
+public abstract class PlayerActionPanel : MonoBehaviour
 {
-    [SerializeField] protected GameObject _buttonPrefab;
-    [SerializeField] protected RectTransform _buttonsParent;
-
+    [SerializeField] protected List<GameObject> _actionSlots;
     protected List<Button> _buttons;
+
     protected Monster _actor;
+    protected PlayerInputSystem _parentInputSystem;
 
 
-    private void Awake()
+    public void SetParentInputSystem(PlayerInputSystem parentInputSystem)
     {
-        _buttons = new List<Button>();
+        _parentInputSystem = parentInputSystem;
     }
-
     public virtual void SetAllButtonsInteractabilityByCondition()
     {
 
@@ -26,16 +26,19 @@ public class PlayerActionPanel : MonoBehaviour
         foreach (Button button in _buttons)
             button.interactable = false;
     }
-    public void DestroyAllButtons()
+    public void ClearAllButtons()
     {
-        Debug.Log($"Number of buttons: {_buttons.Count}");
-
         foreach (Button button in _buttons)
-        {
-            Debug.Log(button.gameObject);
-            Destroy(button.gameObject);
-        }
+            button.onClick.RemoveAllListeners();
 
         _buttons.Clear();
+
+        foreach (GameObject actionSlot in _actionSlots)
+        {
+            actionSlot.GetComponentInChildren<TextMeshProUGUI>().text = "";
+
+            Button actionSlotButton = actionSlot.GetComponent<Button>();
+            actionSlotButton.enabled = false;
+        }
     }
 }

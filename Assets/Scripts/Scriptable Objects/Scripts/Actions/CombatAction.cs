@@ -29,8 +29,12 @@ public abstract class CombatAction : ScriptableObject
 
         if (consumedAction != CombatActionType.FreeAction)
         {
-            actor.StealthRoll = 0;
-            _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
+            if (actor.StealthRoll > -1000)
+            {
+                actor.StealthRoll = -1000;
+                _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
+                _combatDependencies.EventsLogger.LogLocalInfo(actor, "Stealth broken");
+            }
         }
     }
     public virtual void DoAction(Monster actor, Monster target, CombatActionType consumedAction)

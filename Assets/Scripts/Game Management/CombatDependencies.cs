@@ -33,7 +33,5 @@ public class CombatDependencies : MonoBehaviour
     {
         Map = map;
         Highlight = map.GetComponent<MapHighlight>();
-
-        Debug.Log($"Combat map set to {Map}, map highlight set to {Highlight}");
     }
 }

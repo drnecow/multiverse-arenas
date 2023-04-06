@@ -74,10 +74,10 @@ public class MonsterDecisionController : MonoBehaviour
         _decisionTreeRoot.PrintTree();
     }
 
-    public List<Monster> FindEnemiesInMeleeAttackReach(MeleeAttack attack)
+    public HashSet<Monster> FindEnemiesInMeleeAttackReach(MeleeAttack attack)
     {
-        List<Monster> enemies = new List<Monster>();
-        List<Monster> surroundingMonsters = _map.FindMonstersInRadius(_actor.CurrentCoordsOriginCell, _actor.Stats.Size, attack.Reach);
+        HashSet<Monster> enemies = new HashSet<Monster>();
+        HashSet<Monster> surroundingMonsters = _map.FindMonstersInRadius(_actor.CurrentCoordsOriginCell, _actor.Stats.Size, attack.Reach);
 
         foreach (Monster monster in surroundingMonsters)
         {

@@ -115,6 +115,7 @@ public class GridMap : MonoBehaviour
     [SerializeField] private int _height;
     private float _cellSize = ConstantValues.MAP_CELL_SIZE;
     [SerializeField] private Vector3 _originPosition;
+    [SerializeField] private List<Obstacle> _initialObstacles;
 
     private GridNode[,] _contents;
 
@@ -156,6 +157,8 @@ public class GridMap : MonoBehaviour
                 }
                 else
                     _contents[x, y] = new GridNode();
+
+        InitializeObstacles();
     }
 
 
@@ -176,6 +179,14 @@ public class GridMap : MonoBehaviour
             return false;
     }
 
+    public void InitializeObstacles()
+    {
+        foreach (Obstacle obstacle in _initialObstacles)
+        {
+            obstacle.SetMap(this);
+            PlaceObstacleOnCoords(obstacle, obstacle.CurrentCoords);
+        }
+    }
 
     public GridNode GetGridObjectAtCoords(Coords objCoords)
     {
@@ -383,10 +394,34 @@ public class GridMap : MonoBehaviour
             }
         }
     }
-    //TODO: implement
-    public void PlaceObstacleOnCoords(Obstacle obstacleToPlace, Coords targetCoords)
+    public void PlaceObstacleOnCoords(Obstacle obstacleToPlace, List<Coords> targetCoords)
     {
+        if (targetCoords != null)
+        {
+            if (targetCoords.Any(targetCoord => !ValidateCoords(targetCoord)))
+            {
+                string coordsString = "";
+                foreach (Coords targetCoord in targetCoords)
+                    coordsString += targetCoord.ToString() + " ";
 
+                Debug.LogWarning($"Cannot place obstacle {obstacleToPlace} on invalid coords {coordsString}");
+                return;
+            }
+
+            foreach (Coords targetCoord in targetCoords)
+            {
+                GetGridObjectAtCoords(targetCoord).Obstacle = obstacleToPlace;
+
+                if (_debugViewEnabled)
+                {
+                    TextMesh cellText = _cellOccupationIndicatingText[targetCoord.x, targetCoord.y];
+                    cellText.text = "False";
+                    cellText.color = Color.red;
+                }
+            }
+        }
+        else
+            Debug.LogWarning($"Cannot place obstacle {obstacleToPlace} on null coords");
     }
 
 
@@ -737,9 +772,9 @@ public class GridMap : MonoBehaviour
         return validNeighbours;
     }
 
-    public List<Monster> FindMonstersInRadius(Coords entityOriginCoords, Size entitySize, int radius)
+    public HashSet<Monster> FindMonstersInRadius(Coords entityOriginCoords, Size entitySize, int radius)
     {
-        List<Monster> monsters = new List<Monster>();
+        HashSet<Monster> monsters = new HashSet<Monster>();
 
         int radiusCells = radius / 5;
         //Debug.Log($"Radius cells: {radiusCells}");

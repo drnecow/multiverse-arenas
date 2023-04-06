@@ -8,6 +8,7 @@ public class MonsterAnimator : MonoBehaviour
 {
     private Monster _actor;
     private Animator _animator;
+    [SerializeField] private VisualAssets _visualAssets;
 
     [SerializeField] Sprite _deathSprite;
 
@@ -25,7 +26,8 @@ public class MonsterAnimator : MonoBehaviour
     public void KillMonster()
     {
         _animator.SetTrigger("Die");
-        //_actor.gameObject.GetComponent<SpriteRenderer>().sprite = _deathSprite;
+        SetMonsterNormalMaterial();
+        _actor.gameObject.GetComponent<SpriteRenderer>().sortingLayerName = "Dead monsters";
     }
     public void MoveMonster(List<Vector3> pathPositions, float moveSpeedPerCellInSeconds, MonsterActionType movementType)
     {
@@ -60,5 +62,13 @@ public class MonsterAnimator : MonoBehaviour
             OnActionAnimationFinished?.Invoke(_actor, MonsterActionType.Move);
         else if (movementType == MonsterActionType.Dash)
             OnActionAnimationFinished?.Invoke(_actor, MonsterActionType.Dash);
+    }
+    public void SetMonsterStealthMaterial()
+    {
+        _actor.gameObject.GetComponent<SpriteRenderer>().material = _visualAssets.StealthMaterial;
+    }
+    public void SetMonsterNormalMaterial()
+    {
+        _actor.gameObject.GetComponent<SpriteRenderer>().material = _visualAssets.NormalMaterial;
     }
 }

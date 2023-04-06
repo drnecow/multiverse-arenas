@@ -27,6 +27,7 @@ public class Monster : MonoBehaviour
         Stats = stats;
     }
     [SerializeField] private int _numberOfAttacks;
+    public int NumberOfAttacks { get => _numberOfAttacks; }
 
     [field: SerializeField] public MonsterCombatActions CombatActions { get; private set; }
 
@@ -81,6 +82,8 @@ public class Monster : MonoBehaviour
 
     private bool _mainActionAvailable = true;
     public bool MainActionAvailable { get => _mainActionAvailable; set => _mainActionAvailable = value; }
+    private bool _attackMainActionAvailable = true;
+    public bool AttackMainActionAvailable { get => _attackMainActionAvailable; set => _attackMainActionAvailable = value; }
     private bool _bonusActionAvailable = true;
     public bool BonusActionAvailable { get => _bonusActionAvailable; set => _bonusActionAvailable = value; }
     private bool _reactionAvailable = true;
@@ -94,13 +97,14 @@ public class Monster : MonoBehaviour
     public bool IsHiding { get => _isHiding; set => _isHiding = value; }
     private int _stealthRoll = -1000;
     public int StealthRoll { get => _stealthRoll; set => _stealthRoll = value; }
-
+    
+    private int _remainingTotalAttacks;
+    public int RemainingTotalAttacks { get => _remainingTotalAttacks; set => _remainingTotalAttacks = value; }
+    public Dictionary<Attack, int> RemainingAttacks { get; private set; }
     public SpeedValues RemainingSpeed { get; private set; }
-
     
-    
-
     public HashSet<Monster> VisibleTargets { get; private set; }
+    
 
     public event Action<bool> OnMonsterAllegianceChanged;
 
@@ -114,6 +118,14 @@ public class Monster : MonoBehaviour
         MonsterAnimator = gameObject.GetComponent<MonsterAnimator>();
         ActiveConditions = new HashSet<Condition>();
         VisibleTargets = new HashSet<Monster>();
+
+        _remainingTotalAttacks = _numberOfAttacks;
+        
+        RemainingAttacks = new Dictionary<Attack, int>();
+        foreach (KeyValuePair<MeleeAttack, int> meleeAttackIntPair in CombatActions.MeleeAttacks)
+            RemainingAttacks.Add(meleeAttackIntPair.Key, meleeAttackIntPair.Value);
+        foreach (KeyValuePair<RangedAttack, int> rangedAttackIntPair in CombatActions.RangedAttacks)
+            RemainingAttacks.Add(rangedAttackIntPair.Key, rangedAttackIntPair.Value);
 
         RemainingSpeed = new SpeedValues(Stats.Speed);
     }

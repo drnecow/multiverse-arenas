@@ -121,7 +121,6 @@ MonoBehaviour:
     <RangedAttacks>k__BackingField:
       m_keys: []
       m_values: 
-  <VisibleTargets>k__BackingField: []
 --- !u!114 &5795388509437168313
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -165,6 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b80d78623b9f3d2469b1d1045a6d7296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _visualAssets: {fileID: 11400000, guid: b40f1feda216c9a40a9bcfe37f64da72, type: 2}
   _deathSprite: {fileID: -3316254223727155804, guid: 464261b143087904f98496ed5caab051, type: 3}
   _actorAttacksStringIdentifiers:
   - BiteAttack

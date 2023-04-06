@@ -16,13 +16,28 @@ public class HPBarAnimation : MonoBehaviour
     {
         _hpBarImage = gameObject.GetComponent<Image>();
 
-        _maxHP = _monster.Stats.MaxHP;
-        _monster.OnMonsterAllegianceChanged += (isPlayerControlled) => { if (!isPlayerControlled) _hpBarImage.color = Color.red; };
-        _monster.OnMonsterHPChanged += ChangeHPBar;
+        if (_monster != null)
+        {
+            _maxHP = _monster.Stats.MaxHP;
+            _monster.OnMonsterHPChanged += ChangeHPBar;
+        }
     }
 
+    public void SetMonster(Monster monster)
+    {
+        _monster = monster;
+
+        _maxHP = _monster.Stats.MaxHP;
+        _monster.OnMonsterHPChanged += ChangeHPBar;
+    }
     public void ChangeHPBar(int newCurrentHP)
     {
+        Debug.Log("Changing HP bar");
         _hpBarImage.fillAmount = (float)newCurrentHP / _maxHP;
+    }
+
+    private void OnDestroy()
+    {
+        _monster.OnMonsterHPChanged -= ChangeHPBar;
     }
 }

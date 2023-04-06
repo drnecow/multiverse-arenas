@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using Project.Constants;
 using Project.Utils;
@@ -13,48 +14,42 @@ public class PlayerCombatActionPanel : PlayerActionPanel
     private CombatActionType _combatActionType;
 
 
-    public void CreateButtons(List<CombatAction> combatActions, CombatActionType combatActionType, Monster actor, PlayerInputSystem playerInputSystem)
+    public void CreateButtons(List<CombatAction> combatActions, CombatActionType combatActionType, Monster actor)
     {
+        _buttons = new List<Button>();
+
         _combatActions = combatActions;
         _combatActionType = combatActionType;
         _actor = actor;
 
-        foreach (CombatAction combatAction in _combatActions)
+        for (int i = 0; i < _combatActions.Count; i++)
         {
-            GameObject buttonPrefab = Instantiate(_buttonPrefab);
-            buttonPrefab.transform.SetParent(_buttonsParent);
+            CombatAction combatAction = _combatActions[i];
 
-            Button combatActionButton = buttonPrefab.GetComponent<Button>();
-            combatActionButton.GetComponentInChildren<TextMeshProUGUI>().text = combatAction.Name;
+            Button combatActionButton = _actionSlots[i].GetComponent<Button>();
+            _actionSlots[i].GetComponentInChildren<TextMeshProUGUI>().text = combatAction.Name;
+            combatActionButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight(); _parentInputSystem.InterruptCurrentCoroutines(); });
             combatActionButton.onClick.AddListener(() => GetButtonAction(combatAction)());
 
+            combatActionButton.enabled = true;
             _buttons.Add(combatActionButton);
         }
     }
 
     private Action GetButtonAction(CombatAction combatAction)
     {
+        MapHighlight highlight = _actor.CombatDependencies.Highlight;
+
         Action doMainButtonAction = combatAction.Identifier switch
         {
-            MonsterActionType.Move => () => StartCoroutine(HandleMoveAction((Move)combatAction, false)),
             MonsterActionType.Dash => () => StartCoroutine(HandleMoveAction((Move)combatAction, true)),
             MonsterActionType.Disengage => () => combatAction.DoAction(_actor, _combatActionType),
             MonsterActionType.Dodge => () => combatAction.DoAction(_actor, _combatActionType),
             MonsterActionType.Grapple => () => Debug.Log("Grapple action"),
-            MonsterActionType.Hide => () => Debug.Log("Hide action"),
-            MonsterActionType.Seek => () => Debug.Log("Seek action"),
+            MonsterActionType.Hide => () => combatAction.DoAction(_actor, _combatActionType),
+            MonsterActionType.Seek => () => combatAction.DoAction(_actor, _combatActionType),
             _ => () => Debug.LogWarning("Unknown action")
         };
-
-        Action consumeActionType = _combatActionType switch
-        {
-            CombatActionType.FreeAction => () => { },
-            CombatActionType.MainAction => () => _actor.MainActionAvailable = false,
-            CombatActionType.BonusAction => () => _actor.BonusActionAvailable = false,
-            _ => () => { }
-        };
-
-        Action buttonAction = () => { doMainButtonAction(); consumeActionType(); };
 
         return doMainButtonAction;
     }
@@ -74,7 +69,6 @@ public class PlayerCombatActionPanel : PlayerActionPanel
         MapHighlight highlight = _actor.CombatDependencies.Highlight;
 
         Coords lastMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
-        bool actionPerformed = false;
 
         bool isActorSingleCellSized = GridMap.IsSingleCelledSize(_actor.Stats.Size);
 
@@ -82,7 +76,7 @@ public class PlayerCombatActionPanel : PlayerActionPanel
         {
             List<Coords> singleCellPath = FindAndHighlightSingleCellMovementPath(lastMouseCoords, map, highlight, isDash);
 
-            while (!actionPerformed)
+            while (true)
             {
                 Coords currentMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
 
@@ -90,15 +84,19 @@ public class PlayerCombatActionPanel : PlayerActionPanel
                 {
                     singleCellPath = FindAndHighlightSingleCellMovementPath(currentMouseCoords, map, highlight, isDash);
                 }
-                if (Input.GetMouseButtonDown(0))
+                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
                 {
                     if (singleCellPath != null)
                     {
-                        moveAction.DoAction(_actor, singleCellPath, _combatActionType);
-                        highlight.ClearHighlight();
-                        actionPerformed = true;
+                        if (isDash && singleCellPath.Count <= _actor.Stats.Speed.GetSpeedCells(Speed.Walk) || !isDash && singleCellPath.Count <= _actor.RemainingSpeed.GetSpeedCells(Speed.Walk))
+                        {
+                            moveAction.DoAction(_actor, singleCellPath, _combatActionType);
+                            highlight.ClearHighlight();
+                            yield break;
+                        }
                     }
                 }
+
                 yield return null;
             }
         }
@@ -106,7 +104,7 @@ public class PlayerCombatActionPanel : PlayerActionPanel
         {
             List<List<Coords>> multipleCellPath = FindAndHighlightMultipleCellMovementPath(lastMouseCoords, map, highlight, isDash);
 
-            while (!actionPerformed)
+            while (true)
             {
                 Coords currentMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
 
@@ -114,15 +112,19 @@ public class PlayerCombatActionPanel : PlayerActionPanel
                 {
                     multipleCellPath = FindAndHighlightMultipleCellMovementPath(currentMouseCoords, map, highlight, isDash);
                 }
-                if (Input.GetMouseButtonDown(0))
+                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
                 {
                     if (multipleCellPath != null)
                     {
-                        moveAction.DoAction(_actor, multipleCellPath, _combatActionType);
-                        highlight.ClearHighlight();
-                        actionPerformed = true;
+                        if (isDash && multipleCellPath.Count <= _actor.Stats.Speed.GetSpeedCells(Speed.Walk) || !isDash && multipleCellPath.Count <= _actor.RemainingSpeed.GetSpeedCells(Speed.Walk))
+                        {
+                            moveAction.DoAction(_actor, multipleCellPath, _combatActionType);
+                            highlight.ClearHighlight();
+                            yield break;
+                        }
                     }
                 }
+
                 yield return null;
             }
         }
@@ -147,7 +149,9 @@ public class PlayerCombatActionPanel : PlayerActionPanel
                 highlight.HighlightCells(unavailablePathCells, Color.red);
             }
 
-            return availablePathCells;
+            highlight.CreateMapText(path[path.Count - 1], $"{path.Count * 5} ft.");
+
+            return path;
         }
 
         return null;

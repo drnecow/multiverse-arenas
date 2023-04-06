@@ -18,6 +18,9 @@ public class CombatManager : MonoBehaviour
     private Queue<Monster> _initiativeOrder;
     private bool _combatStopped = false;
 
+    public event Action OnNewRoundStarted;
+    public event Action<Monster> OnMonsterRemovedFromGame;
+
     public event Action OnWinGame;
     public event Action OnLoseGame;
     
@@ -44,7 +47,7 @@ public class CombatManager : MonoBehaviour
 
 
         // Load monsters of player choice, enemies and allies
-        for (int i = 0; i < map.Height; i++)
+        for (int i = 0; i < 8; i++)
         {
             GameObject allyPrefab = Instantiate(_testMonsterPrefab);
 
@@ -60,16 +63,12 @@ public class CombatManager : MonoBehaviour
             ally.IsPlayerControlled = true;
             ally.OnMonsterHPReducedToZero += RemoveMonsterFromGame;
             Destroy(allyPrefab.gameObject.GetComponent<MonsterDecisionController>());
-
-            // Subscribe removal of Disengage to player input system's OnPlayerEndTurn
-            // Subscribe ResolveNewTurn() to player input system's OnPlayerEndTurn
-
         }
         _playerInputSystem.OnPlayerEndTurn += () => _playerInputSystem.gameObject.SetActive(false);
         _playerInputSystem.OnPlayerEndTurn += ResolveNewTurn;
 
 
-        for (int j = 0; j < map.Height; j++)
+        for (int j = 0; j < 8; j++)
         {
             GameObject enemyPrefab = Instantiate(_testMonsterPrefab);
 
@@ -112,7 +111,7 @@ public class CombatManager : MonoBehaviour
         }
 
         monsterInitiative = monsterInitiative.OrderByDescending(entry => entry.Value).ToDictionary(entry => entry.Key, entry => entry.Value);
-        _initiativeTracker.SetInitiativeInfo(monsterInitiative);
+        _initiativeTracker.SetInitiativeInfo(monsterInitiative, this);
             
         foreach (Monster combatant in monsterInitiative.Keys)
             _initiativeOrder.Enqueue(combatant);
@@ -121,17 +120,30 @@ public class CombatManager : MonoBehaviour
     {
         if (!_combatStopped)
         {
+            OnNewRoundStarted?.Invoke();
+
             Monster actor = _initiativeOrder.Dequeue();
             RestoreMonsterResources(actor);
 
             HashSet<Monster> opposingMonsters = actor.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
+            HashSet<Monster> allyMonsters = actor.IsPlayerControlled ? AlliedMonsters : EnemyMonsters;
+
             foreach (Monster opposingMonster in opposingMonsters)
             {
                 if (!actor.VisibleTargets.Contains(opposingMonster))
+                {
                     opposingMonster.IsHiding = true;
+                    opposingMonster.MonsterAnimator.SetMonsterStealthMaterial();
+                }
                 else
+                {
                     opposingMonster.IsHiding = false;
+                    opposingMonster.MonsterAnimator.SetMonsterNormalMaterial();
+                }
             }
+
+            foreach (Monster allyMonster in allyMonsters)
+                allyMonster.MonsterAnimator.SetMonsterNormalMaterial();
 
             if (actor.IsPlayerControlled)
             {
@@ -149,6 +161,14 @@ public class CombatManager : MonoBehaviour
     {
         monster.MainActionAvailable = true;
         monster.BonusActionAvailable = true;
+
+        monster.RemainingTotalAttacks = monster.NumberOfAttacks;
+
+        foreach (KeyValuePair<MeleeAttack, int> meleeAttackIntPair in monster.CombatActions.MeleeAttacks)
+            monster.RemainingAttacks[meleeAttackIntPair.Key] = meleeAttackIntPair.Value;
+        foreach (KeyValuePair<RangedAttack, int> rangedAttackIntPair in monster.CombatActions.RangedAttacks)
+            monster.RemainingAttacks[rangedAttackIntPair.Key] = rangedAttackIntPair.Value;
+
         monster.RemainingSpeed.SetSpeedValues(monster.Stats.Speed); // At the start of the monster's turn, its speed restores to maximum
 
         monster.IsDodging = false;
@@ -172,10 +192,13 @@ public class CombatManager : MonoBehaviour
 
         foreach (Monster opposingMonster in oppositeSideMonsters)
             opposingMonster.VisibleTargets.Add(monster);
+
+        monster.MonsterAnimator.SetMonsterNormalMaterial();
     }
     private void RemoveMonsterFromGame(Monster monster)
     {
         Debug.LogWarning($"Removing {monster} from game");
+        OnMonsterRemovedFromGame?.Invoke(monster);
 
         if (monster.IsPlayerControlled)
         {
@@ -207,10 +230,11 @@ public class CombatManager : MonoBehaviour
 
         monster.CombatDependencies.Map.FreeCurrentCoordsOfMonster(monster);
         monster.MonsterAnimator.KillMonster();
-        monster.gameObject.GetComponent<SpriteRenderer>().sortingLayerName = "Dead monsters";
+        
         Destroy(monster.transform.Find("HPBarUI").gameObject);
-        Destroy(monster.gameObject.GetComponent<MonsterDecisionController>());
-        //monster.gameObject.SetActive(false);
-        Destroy(monster);
+        if (!monster.IsPlayerControlled)
+            Destroy(monster.gameObject.GetComponent<MonsterDecisionController>());
+        monster.enabled = false;
+        //Destroy(monster);
     }
 }

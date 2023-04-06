@@ -19,6 +19,8 @@ public class Hide : CombatAction
         base.DoAction(actor, consumedAction);
         Debug.Log($"{actor.Name} is Hiding");
 
+        OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
+
         int stealthRoll = actor.MakeSkillCheck(Skill.Stealth);
         actor.StealthRoll = stealthRoll;
         actor.CombatDependencies.CombatManager.HandleMonsterEnteringStealth(actor, stealthRoll);

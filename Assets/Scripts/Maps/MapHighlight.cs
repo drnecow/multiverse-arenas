@@ -1,13 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class MapHighlight : MonoBehaviour
 {
-    GameObject[,] _cells;
-    List<Coords> _currentlyHighlightedCells;
+    private GameObject[,] _cells;
+    private List<Coords> _currentlyHighlightedCells;
+    private TextMeshProUGUI _currentMapText = null;
 
     [SerializeField] private GameObject _highlightSquarePrefab;
+    [SerializeField] private GameObject _onMapTextPrefab;
     [SerializeField] private Transform _highlightParent;
     private GridMap _map;
 
@@ -57,6 +60,15 @@ public class MapHighlight : MonoBehaviour
             _currentlyHighlightedCells.Add(cell);
         }
     }
+    public void CreateMapText(Coords cell, string text)
+    {
+        GameObject mapTextPrefab = Instantiate(_onMapTextPrefab);
+        mapTextPrefab.GetComponent<Canvas>().worldCamera = Camera.main;
+
+        _currentMapText = mapTextPrefab.GetComponentInChildren<TextMeshProUGUI>();
+        _currentMapText.text = text;
+        _currentMapText.transform.position = _map.XYToWorldPosition(cell);
+    }
     public void ClearHighlight()
     {
         foreach (Coords cell in _currentlyHighlightedCells)
@@ -67,7 +79,12 @@ public class MapHighlight : MonoBehaviour
             color.a = 0f;
             square.GetComponent<SpriteRenderer>().color = color;
         }
-
         _currentlyHighlightedCells.Clear();
+
+        if (_currentMapText != null)
+        {
+            Destroy(_currentMapText.gameObject.transform.parent.gameObject);
+            _currentMapText = null;
+        }
     }
 }

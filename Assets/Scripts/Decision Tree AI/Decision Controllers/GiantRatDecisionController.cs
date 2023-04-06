@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Project.Constants;
 
@@ -47,8 +48,11 @@ public class GiantRatDecisionController : MonsterDecisionController
                 DoSequenceOfActionsAndEndTurn(dashAction);
             });
 
+        DTreeLeaf takeSeekAction = new DTreeLeaf("Take Seek action",
+            () => DoSequenceOfActionsAndEndTurn(() => _commonActions[MonsterActionType.Seek].DoAction(_actor, CombatActionType.MainAction)));
+
         DTreeLeaf takeDodgeAction = new DTreeLeaf("Take Dodge action",
-            () => DoSequenceOfActionsAndEndTurn(() => _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dodge).DoAction(_actor, CombatActionType.MainAction)));
+            () => DoSequenceOfActionsAndEndTurn(() => _commonActions[MonsterActionType.Dodge].DoAction(_actor, CombatActionType.MainAction)));
 
         DTreeLeaf skipTurn = new DTreeLeaf("Nothing to do, skip turn", SkipTurn);
 
@@ -72,9 +76,9 @@ public class GiantRatDecisionController : MonsterDecisionController
 
 
         DTreeBinaryConditional isEnemyInMyMeleeReach = new DTreeBinaryConditional("Is an enemy in my melee reach?", 
-            () => { List<Monster> enemiesInMeleeReach = FindEnemiesInMeleeAttackReach(_biteAttack);
+            () => { HashSet<Monster> enemiesInMeleeReach = FindEnemiesInMeleeAttackReach(_biteAttack);
                 if (enemiesInMeleeReach.Count > 0)
-                    _closestTarget = enemiesInMeleeReach[0];
+                    _closestTarget = enemiesInMeleeReach.ToList()[0];
                 return enemiesInMeleeReach.Count > 0; 
             });
 
@@ -112,7 +116,7 @@ public class GiantRatDecisionController : MonsterDecisionController
         isEnemyInMyMeleeReach.SetFalseConditionChild(isThereAPathToEnemyAtAll);
 
         doISeeEnemies.SetTrueConditionChild(isEnemyInMyMeleeReach);
-        doISeeEnemies.SetFalseConditionChild(takeDodgeAction);
+        doISeeEnemies.SetFalseConditionChild(takeSeekAction);
 
         amIGrappled.SetTrueConditionChild(attackGrapplerOrTryEscape);
         amIGrappled.SetFalseConditionChild(doISeeEnemies);
