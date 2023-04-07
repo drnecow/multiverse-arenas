@@ -47,7 +47,7 @@ public class CombatManager : MonoBehaviour
 
 
         // Load monsters of player choice, enemies and allies
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 3; i++)
         {
             GameObject allyPrefab = Instantiate(_testMonsterPrefab);
 
@@ -68,9 +68,10 @@ public class CombatManager : MonoBehaviour
         _playerInputSystem.OnPlayerEndTurn += ResolveNewTurn;
 
 
-        for (int j = 0; j < 8; j++)
+        for (int j = 0; j < 3; j++)
         {
             GameObject enemyPrefab = Instantiate(_testMonsterPrefab);
+            enemyPrefab.GetComponent<SpriteRenderer>().color = new Color(0.5f, 0.5f, 0.5f);
 
             Coords enemyCoords = new Coords(map.Width / 2 + 1, j);
             enemyPrefab.transform.position = map.XYToWorldPosition(enemyCoords);
@@ -102,48 +103,33 @@ public class CombatManager : MonoBehaviour
         foreach (Monster ally in AlliedMonsters)
         {
             int initiativeRoll = ally.RollInitiative();
+            ally.InitiativeRoll = initiativeRoll;
             monsterInitiative.Add(ally, initiativeRoll);
         }
         foreach (Monster enemy in EnemyMonsters)
         {
             int initiativeRoll = enemy.RollInitiative();
+            enemy.InitiativeRoll = initiativeRoll;
             monsterInitiative.Add(enemy, initiativeRoll);
         }
 
         monsterInitiative = monsterInitiative.OrderByDescending(entry => entry.Value).ToDictionary(entry => entry.Key, entry => entry.Value);
-        _initiativeTracker.SetInitiativeInfo(monsterInitiative, this);
             
         foreach (Monster combatant in monsterInitiative.Keys)
             _initiativeOrder.Enqueue(combatant);
+
+        _initiativeTracker.SetInitiativeInfo(_initiativeOrder, this);
     }
     private void ResolveNewTurn()
     {
         if (!_combatStopped)
         {
-            OnNewRoundStarted?.Invoke();
+            _initiativeTracker.MoveToNextRound();
 
             Monster actor = _initiativeOrder.Dequeue();
             RestoreMonsterResources(actor);
 
-            HashSet<Monster> opposingMonsters = actor.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
-            HashSet<Monster> allyMonsters = actor.IsPlayerControlled ? AlliedMonsters : EnemyMonsters;
-
-            foreach (Monster opposingMonster in opposingMonsters)
-            {
-                if (!actor.VisibleTargets.Contains(opposingMonster))
-                {
-                    opposingMonster.IsHiding = true;
-                    opposingMonster.MonsterAnimator.SetMonsterStealthMaterial();
-                }
-                else
-                {
-                    opposingMonster.IsHiding = false;
-                    opposingMonster.MonsterAnimator.SetMonsterNormalMaterial();
-                }
-            }
-
-            foreach (Monster allyMonster in allyMonsters)
-                allyMonster.MonsterAnimator.SetMonsterNormalMaterial();
+            SetMaterialsOfOtherMonsters(actor);
 
             if (actor.IsPlayerControlled)
             {
@@ -154,7 +140,6 @@ public class CombatManager : MonoBehaviour
                 actor.GetComponent<MonsterDecisionController>().MakeDecision();
 
             _initiativeOrder.Enqueue(actor);
-
         }
     }
     private void RestoreMonsterResources(Monster monster)
@@ -172,6 +157,26 @@ public class CombatManager : MonoBehaviour
         monster.RemainingSpeed.SetSpeedValues(monster.Stats.Speed); // At the start of the monster's turn, its speed restores to maximum
 
         monster.IsDodging = false;
+    }
+    private void SetMaterialsOfOtherMonsters(Monster monster)
+    {
+        HashSet<Monster> opposingMonsters = monster.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
+        HashSet<Monster> allyMonsters = monster.IsPlayerControlled ? AlliedMonsters : EnemyMonsters;
+
+        foreach (Monster opposingMonster in opposingMonsters)
+        {
+            if (!monster.VisibleTargets.Contains(opposingMonster))
+            {
+                opposingMonster.MonsterAnimator.SetMonsterStealthMaterial();
+            }
+            else
+            {
+                opposingMonster.MonsterAnimator.SetMonsterNormalMaterial();
+            }
+        }
+
+        foreach (Monster allyMonster in allyMonsters)
+            allyMonster.MonsterAnimator.SetMonsterNormalMaterial();
     }
 
     public void HandleMonsterEnteringStealth(Monster monster, int stealthRoll)

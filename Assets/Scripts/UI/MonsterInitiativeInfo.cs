@@ -17,21 +17,21 @@ public class MonsterInitiativeInfo : MonoBehaviour, IPointerEnterHandler, IPoint
     [SerializeField] private TextMeshProUGUI _initiativeNumberElement;
     
 
-    public void SetInfo(Monster monster, int initiativeNumber)
+    public void SetInfo(Monster monster)
     {
         _monster = monster;
-        _initiativeNumber = initiativeNumber;
+        _initiativeNumber = _monster.InitiativeRoll;
 
-        _hpBar.SetMonster(monster);
+        _hpBar.SetMonster(_monster);
 
-        _spriteElement.sprite = _monster.GetComponent<SpriteRenderer>().sprite;
+        _spriteElement.sprite = _monster.MonsterAnimator.IdleSprite;
         _initiativeNumberElement.text = _initiativeNumber.ToString();
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         MapHighlight highlight = _monster.CombatDependencies.Highlight;
-        highlight.HighlightCells(_monster.CurrentCoords, Color.grey);
+        highlight.HighlightCells(_monster.CurrentCoords, Color.yellow);
     }
 
     public void OnPointerExit(PointerEventData eventData)

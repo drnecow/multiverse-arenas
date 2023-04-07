@@ -93,8 +93,8 @@ public class Monster : MonoBehaviour
     public bool IsDisengaging { get => _isDisengaging; set => _isDisengaging = value; }
     private bool _isDodging = false;
     public bool IsDodging { get => _isDodging; set => _isDodging = value; }
-    private bool _isHiding = false;
-    public bool IsHiding { get => _isHiding; set => _isHiding = value; }
+    private int _initiativeRoll;
+    public int InitiativeRoll { get => _initiativeRoll; set => _initiativeRoll = value; }
     private int _stealthRoll = -1000;
     public int StealthRoll { get => _stealthRoll; set => _stealthRoll = value; }
     

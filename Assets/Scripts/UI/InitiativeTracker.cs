@@ -14,11 +14,10 @@ public class InitiativeTracker : MonoBehaviour
     [SerializeField] private GameObject _enemyInitiativeInfoPrefab;
     [SerializeField] private GameObject _roundSeparatorPrefab;
 
-    private Dictionary<Monster, int> _initiativesList;
     private Queue<Monster> _initiativeOrder;
-    private Queue<GameObject> _displayedGameObjects;
-    private List<MonsterInitiativeInfo> _displayedInitiativeInfo;
+    private LinkedList<GameObject> _displayedGameObjects;
 
+    private bool _isFirstRound;
     private int _nextRound;
     private Monster _firstMonsterInInitiative;
 
@@ -28,46 +27,37 @@ public class InitiativeTracker : MonoBehaviour
         _contentParent = GetComponent<RectTransform>();    
     }
 
-    public void SetInitiativeInfo(Dictionary<Monster, int> initiativesList, CombatManager combatManager)
+    public void SetInitiativeInfo(Queue<Monster> initiativeOrder, CombatManager combatManager)
     {
         // Create queue of monsters in initiative order
         // Mark first monster in initiative
         // Dequeue monsters up to queue length
 
-        _nextRound = 2;
-        _initiativesList = initiativesList;
-        _initiativeOrder = new Queue<Monster>();
-        _displayedGameObjects = new Queue<GameObject>();
-        _displayedInitiativeInfo = new List<MonsterInitiativeInfo>();
+        List<Monster> allMonsters = initiativeOrder.ToList();
+        Debug.Log("All initiatives:");
+        foreach (Monster monster in allMonsters)
+            Debug.Log($"{monster}: {monster.InitiativeRoll}");
 
-        foreach (Monster monster in initiativesList.Keys)
-            _initiativeOrder.Enqueue(monster);
+        _isFirstRound = true;
+        _nextRound = 2;
+        _initiativeOrder = new Queue<Monster>(initiativeOrder);
+        _displayedGameObjects = new LinkedList<GameObject>();
 
         _firstMonsterInInitiative = _initiativeOrder.Peek();
-        List<Monster> allMonsters = initiativesList.Keys.ToList();
 
-        int currentCell = 0;
+        int currentCell = 1;
 
         while (currentCell < INITIATIVE_TRACKER_SIZE)
         {
-            for (int i = 0; i < Mathf.Min(INITIATIVE_TRACKER_SIZE, allMonsters.Count); i++)
+            int numberOfMonsters = _initiativeOrder.Count;
+
+            for (int i = 0; i < Mathf.Min(INITIATIVE_TRACKER_SIZE, numberOfMonsters); i++)
             {
                 Monster currentMonster = _initiativeOrder.Dequeue();
-                GameObject infoItem;
 
-                if (currentMonster.IsPlayerControlled)
-                    infoItem = Instantiate(_friendlyInitiativeInfoPrefab);
-                else
-                    infoItem = Instantiate(_enemyInitiativeInfoPrefab);
-
-                infoItem.transform.SetParent(_contentParent);
-                _displayedGameObjects.Enqueue(infoItem);
-
-                MonsterInitiativeInfo info = infoItem.GetComponent<MonsterInitiativeInfo>();
-                info.SetInfo(currentMonster, initiativesList[allMonsters[i]]);
+                InsertInitiativeInfoBlock(currentMonster);
 
                 _initiativeOrder.Enqueue(currentMonster);
-                _displayedInitiativeInfo.Add(info);
                 currentCell++;
             }
             
@@ -75,110 +65,158 @@ public class InitiativeTracker : MonoBehaviour
 
             if (currentCell < INITIATIVE_TRACKER_SIZE)
             {
-                GameObject roundSeparator = Instantiate(_roundSeparatorPrefab);
-                roundSeparator.transform.SetParent(_contentParent);
-                _displayedGameObjects.Enqueue(roundSeparator);
-
-                roundSeparator.GetComponentInChildren<TextMeshProUGUI>().text = $"Round {_nextRound}";
-                _nextRound++;
+                InsertRoundSeparator();
                 currentCell++;
             }
         }
 
-        combatManager.OnNewRoundStarted += MoveToNextRound;
         combatManager.OnMonsterRemovedFromGame += DeleteMonster;
+
+        combatManager.OnWinGame += ClearAllElements;
+        combatManager.OnLoseGame += ClearAllElements;
     }
-    // FIXME: something is wrong here
-    private void MoveToNextRound()
+    public void MoveToNextRound()
     {
-        // When the next round comes, delete first element
-        // If firsts element is round separator, delete first element again
-        // Dequeue
-        // If dequeued element is first monster, insert separator as last element and increment next round
-        // Insert dequeued monster as last element
-        // Enqueue dequeued monster again
-
-        GameObject firstElement = _displayedGameObjects.Dequeue();
-        MonsterInitiativeInfo elementInitiativeInfo = firstElement.GetComponent<MonsterInitiativeInfo>();
-
-        if (elementInitiativeInfo == null) // first element in initiative tracker is round separator
+        if (_isFirstRound)
         {
-            GameObject secondElement = _displayedGameObjects.Dequeue();
-            elementInitiativeInfo = secondElement.GetComponent<MonsterInitiativeInfo>();
-
-            _displayedInitiativeInfo.RemoveAt(0);
-            _initiativeOrder.Enqueue(elementInitiativeInfo.Monster);
-
-            Destroy(secondElement);
-        }
-        else
-        {
-            _displayedInitiativeInfo.RemoveAt(0);
-            _initiativeOrder.Enqueue(elementInitiativeInfo.Monster);
-        }
-        Destroy(firstElement);
-
-
-        Monster nextMonster = _initiativeOrder.Dequeue();
-
-        if (nextMonster == _firstMonsterInInitiative)
-        {
-            GameObject roundSeparator = Instantiate(_roundSeparatorPrefab);
-            roundSeparator.transform.SetParent(_contentParent);
-            _displayedGameObjects.Enqueue(roundSeparator);
-
-            roundSeparator.GetComponentInChildren<TextMeshProUGUI>().text = $"Round {_nextRound}";
-            _nextRound++;
+            _isFirstRound = false;
+            return;
         }
 
-        GameObject infoItem;
-
-        if (nextMonster.IsPlayerControlled)
-            infoItem = Instantiate(_friendlyInitiativeInfoPrefab);
-        else
-            infoItem = Instantiate(_enemyInitiativeInfoPrefab);
-
-        infoItem.transform.SetParent(_contentParent);
-        _displayedGameObjects.Enqueue(infoItem);
-
-        MonsterInitiativeInfo info = infoItem.GetComponent<MonsterInitiativeInfo>();
-        info.SetInfo(nextMonster, _initiativesList[nextMonster]);
-
-        _initiativeOrder.Enqueue(nextMonster);
-        _displayedInitiativeInfo.Add(info);
+        do
+        {
+            DeleteFirstElement();
+            InsertNextBlock();
+        }
+        while (IsFirstElementRoundSeparator());
     }
     // FIXME: ...and here
     private void DeleteMonster(Monster deletedMonster)
     {
         Debug.LogWarning("Deleting monster from initiative tracker");
+
+        // Remove deleted monster from initiative queue
+        // Remove all info blocks of deleted monster from displayed objects and record how many there were
+        // If deleted monster happens to be first in initiative, convert initiative queue to list and find monster with next-highest initiative in it
+        // Add elements equal to the number of deleted monster blocks
+
+        _initiativeOrder = new Queue<Monster>(_initiativeOrder.Where(monster => monster != deletedMonster));
+
+        if (_initiativeOrder.Count == 0)
+        {
+            ClearAllElements();
+            return;
+        }
+
+        List<GameObject> blocksToDelete = new List<GameObject>();
+
+        foreach (GameObject block in _displayedGameObjects)
+        {
+            MonsterInitiativeInfo blockInfo = block.GetComponent<MonsterInitiativeInfo>();
+
+            if (blockInfo != null)
+                if (blockInfo.Monster == deletedMonster)
+                    blocksToDelete.Add(block);
+        }
+
+        int numberOfEmptyBlocks = blocksToDelete.Count;
+
+        foreach (GameObject blockToDelete in blocksToDelete)
+        {
+            _displayedGameObjects.Remove(blockToDelete);
+            Destroy(blockToDelete);
+        }
+
         if (deletedMonster == _firstMonsterInInitiative)
         {
-            int highestInitiative = -1000;
-            foreach (Monster monster in _initiativesList.Keys)
+            List<Monster> remainingMonsters = _initiativeOrder.ToList();
+
+            int highestInitiativeRoll = -1000;
+            foreach (Monster remainingMonster in remainingMonsters)
             {
-                if (monster != deletedMonster && _initiativesList[monster] > highestInitiative)
+                if (remainingMonster.InitiativeRoll > highestInitiativeRoll)
                 {
-                    _firstMonsterInInitiative = monster;
-                    highestInitiative = _initiativesList[monster];
+                    highestInitiativeRoll = remainingMonster.InitiativeRoll;
+                    _firstMonsterInInitiative = remainingMonster;
                 }
             }
-
-            Debug.Log($"Monster with next-highest initiative: {_firstMonsterInInitiative} ({_initiativesList[deletedMonster]}");
         }
 
-        _initiativesList = _initiativesList.Where(keyValuePair => keyValuePair.Key != deletedMonster).ToDictionary(enty => enty.Key, enty => enty.Value);
-        _initiativeOrder = new Queue<Monster>(_initiativeOrder.Where(element => element != deletedMonster));
+        for (int i = 0; i < numberOfEmptyBlocks; i++)
+            InsertNextBlock();
+    }
 
-        foreach (GameObject gameObj in _displayedGameObjects)
+    private void DeleteFirstElement()
+    {
+        GameObject firstElement = _displayedGameObjects.First();
+        _displayedGameObjects.RemoveFirst();
+        Destroy(firstElement);
+    }
+    private void ClearAllElements()
+    {
+        foreach (GameObject block in _displayedGameObjects)
         {
-            MonsterInitiativeInfo objInitiativeInfo = gameObj.GetComponent<MonsterInitiativeInfo>();
-            
-            if (objInitiativeInfo != null)
-                if (objInitiativeInfo.Monster == deletedMonster)
-                    Destroy(gameObj);
+            Destroy(block);
         }
+        _displayedGameObjects.Clear();
+    }
+    private void InsertInitiativeInfoBlock(Monster monster)
+    {
+        GameObject infoItem;
 
-        _displayedInitiativeInfo = _displayedInitiativeInfo.Where(info => info.Monster != deletedMonster).ToList();
-        _displayedGameObjects = new Queue<GameObject>(_displayedGameObjects.Where(gameObj => gameObj.GetComponent<MonsterInitiativeInfo>()?.Monster != deletedMonster));
+        if (monster.IsPlayerControlled)
+            infoItem = Instantiate(_friendlyInitiativeInfoPrefab);
+        else
+            infoItem = Instantiate(_enemyInitiativeInfoPrefab);
+
+        infoItem.transform.SetParent(_contentParent);
+        _displayedGameObjects.AddLast(infoItem);
+
+        MonsterInitiativeInfo info = infoItem.GetComponent<MonsterInitiativeInfo>();
+        info.SetInfo(monster);
+    }
+    private void InsertRoundSeparator()
+    {
+        GameObject roundSeparator = Instantiate(_roundSeparatorPrefab);
+        roundSeparator.transform.SetParent(_contentParent);
+        _displayedGameObjects.AddLast(roundSeparator);
+
+        roundSeparator.GetComponentInChildren<TextMeshProUGUI>().text = $"Round {_nextRound}";
+        _nextRound++;
+    }
+    private void InsertNextBlock()
+    {
+        // Peek the next monster
+        Monster nextMonster = _initiativeOrder.Peek();
+        // If next monster is first monster in initiative and last element is not round separator, insert round separator
+        if (nextMonster == _firstMonsterInInitiative && !IsLastElementRoundSeparator())
+        {
+            InsertRoundSeparator();
+        }
+        // Else, dequeue next monster and insert it as last element; enqueue dequeued monster again
+        else
+        {
+            nextMonster = _initiativeOrder.Dequeue();
+            InsertInitiativeInfoBlock(nextMonster);
+            _initiativeOrder.Enqueue(nextMonster);
+        }
+    }
+    private bool IsFirstElementRoundSeparator()
+    {
+        GameObject firstElement = _displayedGameObjects.First();
+
+        if (firstElement.GetComponent<MonsterInitiativeInfo>() == null)
+            return true;
+        else
+            return false;
+    }
+    private bool IsLastElementRoundSeparator()
+    {
+        GameObject lastElement = _displayedGameObjects.Last();
+        
+        if (lastElement.GetComponent<MonsterInitiativeInfo>() == null)
+            return true;
+        else
+            return false;
     }
 }

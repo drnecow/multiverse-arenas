@@ -37,8 +37,8 @@ MonoBehaviour:
   _size: 2
   _challengeRating: 0.125
   _naturalArmorBonus: 0
-  _maxHP: 30
-  _currentHP: 30
+  _maxHP: 7
+  _currentHP: 7
   _hitDie: 6
   _numberOfHitDice: 2
   <Speed>k__BackingField:

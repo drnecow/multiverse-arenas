@@ -24,7 +24,6 @@ public class PlayerAttackPanel : PlayerActionPanel
             Attack attack = _buttonAttacks[i];
 
             Button attackButton = _actionSlots[i].GetComponent<Button>();
-            Debug.Log(attackButton);
             _actionSlots[i].GetComponentInChildren<TextMeshProUGUI>().text = attack.Name;
             attackButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight(); _parentInputSystem.InterruptCurrentCoroutines(); });
 
@@ -34,7 +33,6 @@ public class PlayerAttackPanel : PlayerActionPanel
                 attackButton.onClick.AddListener(() => StartCoroutine(HighlightPossibleTargetsOfRangedAttack(attack as RangedAttack)));
 
             attackButton.enabled = true;
-            Debug.Log(_buttons);
             _buttons.Add(attackButton);
         }
     }

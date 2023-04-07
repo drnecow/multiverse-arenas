@@ -10,9 +10,7 @@ public class MonsterAnimator : MonoBehaviour
     private Animator _animator;
     [SerializeField] private VisualAssets _visualAssets;
 
-    [SerializeField] Sprite _deathSprite;
-
-    [SerializeField] List<string> _actorAttacksStringIdentifiers;
+    [field: SerializeField] public Sprite IdleSprite { get; private set; }
 
     public event Action<Monster, MonsterActionType> OnActionAnimationFinished;
 

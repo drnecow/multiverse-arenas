@@ -41,12 +41,26 @@ public class PlayerInputSystem : MonoBehaviour
     {
         StopAllCoroutines();
     }
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(1)) {
+            if (_movementHighlightInterrupted)
+                _movementHighlightInterrupted = false;
+            else
+            {
+                _movementHighlightInterrupted = true;
+                _actor.CombatDependencies.Highlight.ClearHighlight();
+            }
+        }
+    }
     public void FillActionPanels(Monster actor)
     {
         _actor = actor;
         _moveAction = _actor.CombatActions.FindFreeActionOfType(MonsterActionType.Move) as Move;
         _moveAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendMovementHighlightFor(animationDuration)); };
         _moveAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
+
+        _movementHighlightInterrupted = true;
 
         List<CombatAction> freeActions = _actor.CombatActions.FreeActions.Where(freeAction => freeAction.Identifier != MonsterActionType.Move).ToList();
         MeleeAttackIntDictionary meleeAttacks = _actor.CombatActions.MeleeAttacks;
@@ -161,13 +175,6 @@ public class PlayerInputSystem : MonoBehaviour
 
         _movementHighlightInterrupted = true;
     }
-    public void StopInterruptingCurrentCoroutines()
-    {
-        List<PlayerActionPanel> activePanels = GetAllActiveActionPanels();
-
-        foreach (PlayerActionPanel panel in activePanels)
-            panel.StopAllCoroutines();
-    }
     private List<PlayerActionPanel> GetAllActiveActionPanels()
     {
         List<PlayerActionPanel> allPanels = new List<PlayerActionPanel>();
@@ -200,7 +207,7 @@ public class PlayerInputSystem : MonoBehaviour
 
         if (isActorSingleCellSized)
         {
-            List<Coords> singleCellPath = FindAndHighlightSingleCellMovementPath(lastMouseCoords, map, highlight);
+            List<Coords> singleCellPath = null; //= FindAndHighlightSingleCellMovementPath(lastMouseCoords, map, highlight);
 
             while (true)
             {

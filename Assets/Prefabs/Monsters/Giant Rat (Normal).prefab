@@ -100,7 +100,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _isPlayerControlled: 0
-  <Name>k__BackingField: Giant Rat (Normal)
+  <Name>k__BackingField: Giant Rat
   <Stats>k__BackingField: {fileID: 11400000, guid: 3ce13a08678529042a4f8cb0abadd3f4, type: 2}
   _numberOfAttacks: 1
   <CombatActions>k__BackingField:
@@ -165,9 +165,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _visualAssets: {fileID: 11400000, guid: b40f1feda216c9a40a9bcfe37f64da72, type: 2}
-  _deathSprite: {fileID: -3316254223727155804, guid: 464261b143087904f98496ed5caab051, type: 3}
-  _actorAttacksStringIdentifiers:
-  - BiteAttack
+  <IdleSprite>k__BackingField: {fileID: 698651893934077087, guid: ddc28df189d417644b1c5085e7bb5e31, type: 3}
 --- !u!1001 &7923026438431082851
 PrefabInstance:
   m_ObjectHideFlags: 0
