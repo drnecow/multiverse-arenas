@@ -20,7 +20,7 @@ public class Disengage : CombatAction
 
         Debug.Log($"{actor.Name} is Disengaging");
 
-        actor.IsDisengaging = true;
+        actor.AddActiveCondition(Condition.Disengaging);
         OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
     }
 

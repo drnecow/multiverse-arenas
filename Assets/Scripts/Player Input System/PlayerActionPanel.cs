@@ -7,6 +7,8 @@ using TMPro;
 public abstract class PlayerActionPanel : MonoBehaviour
 {
     [SerializeField] protected List<GameObject> _actionSlots;
+    [SerializeField] protected VisualAssets _visuals;
+    [SerializeField] private Color _initialColor;
     protected List<Button> _buttons;
 
     protected Monster _actor;
@@ -35,10 +37,12 @@ public abstract class PlayerActionPanel : MonoBehaviour
 
         foreach (GameObject actionSlot in _actionSlots)
         {
+            actionSlot.GetComponent<Image>().color = _initialColor;
             actionSlot.GetComponentInChildren<TextMeshProUGUI>().text = "";
+            actionSlot.GetComponent<TooltipTarget>().Enabled = false;
 
             Button actionSlotButton = actionSlot.GetComponent<Button>();
-            actionSlotButton.enabled = false;
+            actionSlotButton.enabled = false;           
         }
     }
 }

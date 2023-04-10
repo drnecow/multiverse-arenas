@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-public class HPBarAnimation : MonoBehaviour
+public class HPBar : MonoBehaviour
 {
     private Image _hpBarImage;
     [SerializeField] Monster _monster;
@@ -19,6 +19,7 @@ public class HPBarAnimation : MonoBehaviour
         if (_monster != null)
         {
             _maxHP = _monster.Stats.MaxHP;
+            ChangeHPBar(_monster.Stats.CurrentHP);
             _monster.OnMonsterHPChanged += ChangeHPBar;
         }
     }
@@ -28,11 +29,11 @@ public class HPBarAnimation : MonoBehaviour
         _monster = monster;
 
         _maxHP = _monster.Stats.MaxHP;
+        ChangeHPBar(_monster.Stats.CurrentHP);
         _monster.OnMonsterHPChanged += ChangeHPBar;
     }
     public void ChangeHPBar(int newCurrentHP)
     {
-        Debug.Log("Changing HP bar");
         _hpBarImage.fillAmount = (float)newCurrentHP / _maxHP;
     }
 

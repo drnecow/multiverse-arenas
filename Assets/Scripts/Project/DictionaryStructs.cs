@@ -281,6 +281,19 @@ namespace Project.DictionaryStructs
 
             return targetSpeed / 5;
         }
+        public Dictionary<Speed, int> GetAllSpeedValues()
+        {
+            Dictionary<Speed, int> speedValues = new Dictionary<Speed, int>
+            {
+                { Speed.Walk, _walk },
+                { Speed.Fly, _fly },
+                { Speed.Swim, _swim },
+                { Speed.Climb, _climb },
+                { Speed.Burrow, _burrow }
+            };
+
+            return speedValues;
+        }
     }
 
     [System.Serializable]
@@ -346,6 +359,20 @@ namespace Project.DictionaryStructs
                 else
                     _truesight = 0;
             }
+        }
+
+        public Dictionary<Sense, int> GetAllSenses()
+        {
+            Dictionary<Sense, int> senses = new Dictionary<Sense, int>
+            {
+                { Sense.NormalVision, _normalVision },
+                { Sense.Blindsight, _blindsight },
+                { Sense.Darkvision, _darkvision },
+                { Sense.Tremorsense, _tremorsense },
+                { Sense.Truesight, _truesight }
+            };
+
+            return senses;
         }
     }
 }

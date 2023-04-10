@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8301887, g: 0.6918288, b: 0.2145959, a: 1}
+  m_Color: {r: 0.8301887, g: 0.6918288, b: 0.2145959, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -964,6 +964,8 @@ MonoBehaviour:
   - {fileID: 1022844045840552346}
   - {fileID: 7529577031742731892}
   - {fileID: 4178127436870394876}
+  _visuals: {fileID: 11400000, guid: b40f1feda216c9a40a9bcfe37f64da72, type: 2}
+  _initialColor: {r: 0.64705884, g: 0.45882353, b: 0.45882353, a: 0}
 --- !u!1001 &5062508268577259267
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1396,6 +1398,8 @@ MonoBehaviour:
   - {fileID: 7238643150158929998}
   - {fileID: 160830792301119392}
   - {fileID: 6034467732379111976}
+  _visuals: {fileID: 11400000, guid: b40f1feda216c9a40a9bcfe37f64da72, type: 2}
+  _initialColor: {r: 0.64705884, g: 0.45882353, b: 0.45882353, a: 0}
 --- !u!1001 &5062508269056552551
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1828,6 +1832,8 @@ MonoBehaviour:
   - {fileID: 7238643149564293418}
   - {fileID: 160830790632740548}
   - {fileID: 6034467732858209100}
+  _visuals: {fileID: 11400000, guid: b40f1feda216c9a40a9bcfe37f64da72, type: 2}
+  _initialColor: {r: 0.64705884, g: 0.45882353, b: 0.45882353, a: 0}
 --- !u!114 &5062508269056552554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2312,3 +2318,5 @@ MonoBehaviour:
   - {fileID: 7238643149531353677}
   - {fileID: 160830791136687523}
   - {fileID: 6034467732557897771}
+  _visuals: {fileID: 11400000, guid: b40f1feda216c9a40a9bcfe37f64da72, type: 2}
+  _initialColor: {r: 0.64705884, g: 0.45882353, b: 0.45882353, a: 0}

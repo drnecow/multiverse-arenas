@@ -48,7 +48,7 @@ MonoBehaviour:
     _climb: 0
     _burrow: 0
   <Senses>k__BackingField:
-    _normalVision: 1000
+    _normalVision: 999
     _blindsight: 0
     _darkvision: 60
     _tremorsense: 0

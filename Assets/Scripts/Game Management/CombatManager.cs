@@ -11,6 +11,7 @@ public class CombatManager : MonoBehaviour
     [SerializeField] private GameObject _testMapPrefab;
 
     [SerializeField] private InitiativeTracker _initiativeTracker;
+    [SerializeField] private CharacterSheet _characterSheet;
     [SerializeField] private PlayerInputSystem _playerInputSystem;
 
     public HashSet<Monster> AlliedMonsters { get; private set; }
@@ -124,9 +125,10 @@ public class CombatManager : MonoBehaviour
     {
         if (!_combatStopped)
         {
-            _initiativeTracker.MoveToNextRound();
+            OnNewRoundStarted?.Invoke();
 
             Monster actor = _initiativeOrder.Dequeue();
+            _characterSheet.SetPinnedMonsterAndItsInfo(actor);
             RestoreMonsterResources(actor);
 
             SetMaterialsOfOtherMonsters(actor);
@@ -156,7 +158,7 @@ public class CombatManager : MonoBehaviour
 
         monster.RemainingSpeed.SetSpeedValues(monster.Stats.Speed); // At the start of the monster's turn, its speed restores to maximum
 
-        monster.IsDodging = false;
+        monster.RemoveActiveCondition(Condition.Dodging);
     }
     private void SetMaterialsOfOtherMonsters(Monster monster)
     {

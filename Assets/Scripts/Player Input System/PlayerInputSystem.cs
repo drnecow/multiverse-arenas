@@ -35,7 +35,7 @@ public class PlayerInputSystem : MonoBehaviour
         _endTurnButton.onClick.AddListener(EndTurn);
 
         OnPlayerEndTurn += () => _actor.CombatDependencies.Highlight.ClearHighlight();
-        OnPlayerEndTurn += () => _actor.IsDisengaging = false;
+        OnPlayerEndTurn += () => _actor.RemoveActiveCondition(Condition.Disengaging);
     }
     private void OnDisable()
     {
@@ -43,7 +43,7 @@ public class PlayerInputSystem : MonoBehaviour
     }
     private void Update()
     {
-        if (Input.GetMouseButtonDown(1)) {
+        if (Input.GetMouseButtonDown(2)) {
             if (_movementHighlightInterrupted)
                 _movementHighlightInterrupted = false;
             else
@@ -89,6 +89,7 @@ public class PlayerInputSystem : MonoBehaviour
         foreach (KeyValuePair<RangedAttack, int> rangedAttackIntPair in rangedAttacks)
             combinedAttacks.Add(rangedAttackIntPair.Key, rangedAttackIntPair.Value);
 
+        _attacksPanel.gameObject.SetActive(false);
         if (combinedAttacks.Count > 0)
         {
             _attacksButton.interactable = true;
@@ -160,11 +161,13 @@ public class PlayerInputSystem : MonoBehaviour
     }
     private IEnumerator SuspendMovementHighlightFor(float timeInSeconds)
     {
+        bool resumeMovement = _movementHighlightInterrupted;
+
         _movementHighlightInterrupted = true;
 
         yield return new WaitForSeconds(timeInSeconds);
 
-        _movementHighlightInterrupted = false;
+        _movementHighlightInterrupted = resumeMovement;
     }
     public void InterruptCurrentCoroutines()
     {

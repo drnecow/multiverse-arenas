@@ -58,7 +58,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.34901962, g: 0.36862746, b: 0.5529412, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -82,6 +82,18 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5878723803872053008, guid: 8a85d9f5d2ee59d4691a99aef83d0256, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5878723803872053008, guid: 8a85d9f5d2ee59d4691a99aef83d0256, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5878723803872053008, guid: 8a85d9f5d2ee59d4691a99aef83d0256, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5878723803872053009, guid: 8a85d9f5d2ee59d4691a99aef83d0256, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -168,7 +180,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5878723803872053014, guid: 8a85d9f5d2ee59d4691a99aef83d0256, type: 3}
       propertyPath: m_Name
-      value: Condition/Feature Icon
+      value: Condition_Feature Icon Variant
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8a85d9f5d2ee59d4691a99aef83d0256, type: 3}

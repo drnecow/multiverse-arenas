@@ -14,3 +14,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <NormalMaterial>k__BackingField: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   <StealthMaterial>k__BackingField: {fileID: 2100000, guid: 07523f5ea822daf47b203dbb51392e5c, type: 2}
+  _defaultSprite: {fileID: 21300000, guid: f67eca4620c20f948a2abc36ac6d8ae7, type: 3}
+  _monsterActionSprites:
+    m_keys: 02000000030000000600000007000000
+    m_values:
+    - {fileID: 21300000, guid: e3fc9d3862be57e42a4a88aa8222099e, type: 3}
+    - {fileID: 21300000, guid: c6149e90d66944c48a83be9ac631f68f, type: 3}
+    - {fileID: 21300000, guid: d7e8ab3eaa5d4b84596f0252c3fdeec3, type: 3}
+    - {fileID: 21300000, guid: c083e20bd36e81145b2d087fe8ef3374, type: 3}
+  _damageTypeSprites:
+    m_keys: 
+    m_values: []
+  _conditionSprites:
+    m_keys: 
+    m_values: []
+  _specialAbilitySprites:
+    m_keys: 04000000
+    m_values:
+    - {fileID: 21300000, guid: b699a28d142c3954a8aee1c0b524ac1c, type: 3}
+  _senseSprites:
+    m_keys: 0100000003000000
+    m_values:
+    - {fileID: 21300000, guid: aadd554783d855b499d621797f835ffb, type: 3}
+    - {fileID: 21300000, guid: 7c85534b0f1403443a35ef2fd600c207, type: 3}
+  _speedSprites:
+    m_keys: 01000000
+    m_values:
+    - {fileID: 21300000, guid: faab0524be889c5449472e4c22bcf094, type: 3}

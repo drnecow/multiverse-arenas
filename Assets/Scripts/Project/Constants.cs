@@ -73,7 +73,9 @@ namespace Project.Constants
         Prone = 11,
         Restrained = 12,
         Stunned = 13,
-        Unconscious = 14
+        Unconscious = 14,
+        Disengaging = 15,
+        Dodging = 16
     }
 
     public enum DamageType

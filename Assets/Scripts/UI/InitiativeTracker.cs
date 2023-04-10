@@ -70,6 +70,7 @@ public class InitiativeTracker : MonoBehaviour
             }
         }
 
+        combatManager.OnNewRoundStarted += MoveToNextRound;
         combatManager.OnMonsterRemovedFromGame += DeleteMonster;
 
         combatManager.OnWinGame += ClearAllElements;
@@ -90,7 +91,6 @@ public class InitiativeTracker : MonoBehaviour
         }
         while (IsFirstElementRoundSeparator());
     }
-    // FIXME: ...and here
     private void DeleteMonster(Monster deletedMonster)
     {
         Debug.LogWarning("Deleting monster from initiative tracker");

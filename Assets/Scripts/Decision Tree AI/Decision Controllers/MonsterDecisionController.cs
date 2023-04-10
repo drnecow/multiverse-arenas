@@ -32,7 +32,7 @@ public class MonsterDecisionController : MonoBehaviour
             {  MonsterActionType.Dash, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dash) },
             {  MonsterActionType.Disengage, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Disengage) },
             {  MonsterActionType.Dodge, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Dodge) },
-            {  MonsterActionType.Grapple, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Grapple) },
+            //{  MonsterActionType.Grapple, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Grapple) },
             {  MonsterActionType.Hide, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Hide) },
             {  MonsterActionType.Seek, _actor.CombatActions.FindMainActionOfType(MonsterActionType.Seek) },
         };
@@ -41,7 +41,7 @@ public class MonsterDecisionController : MonoBehaviour
             commonAction.OnActionAnimationStartedPlaying += SwitchToCurrentAnimationClip;
 
         OnEnemyEndTurn += () => Debug.Log($"{_actor} ended turn");
-        OnEnemyEndTurn += () => _actor.IsDisengaging = false;
+        OnEnemyEndTurn += () => _actor.RemoveActiveCondition(Condition.Disengaging);
     }
 
 

@@ -63,17 +63,13 @@ public abstract class CombatAction : ScriptableObject
 
     public virtual bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType consumedAction)
     {
-        switch (consumedAction)
+        return consumedAction switch
         {
-            case CombatActionType.FreeAction:
-                return true;
-            case CombatActionType.BonusAction:
-                return actor.BonusActionAvailable;
-            case CombatActionType.MainAction:
-                return actor.MainActionAvailable;
-            default:
-                return false;
-        }
+            CombatActionType.FreeAction => true,
+            CombatActionType.BonusAction => actor.BonusActionAvailable,
+            CombatActionType.MainAction => actor.MainActionAvailable,
+            _ => false,
+        };
     }
 
     protected void OnActionAnimationStartedPlayingInvoke(Monster actor, float animationDuration)

@@ -11,7 +11,7 @@ public class MonsterInitiativeInfo : MonoBehaviour, IPointerEnterHandler, IPoint
     public Monster Monster { get => _monster; }
     private int _initiativeNumber;
 
-    [SerializeField] private HPBarAnimation _hpBar;
+    [SerializeField] private HPBar _hpBar;
 
     [SerializeField] private Image _spriteElement;
     [SerializeField] private TextMeshProUGUI _initiativeNumberElement;

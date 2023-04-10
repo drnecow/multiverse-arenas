@@ -26,8 +26,15 @@ public class PlayerCombatActionPanel : PlayerActionPanel
         {
             CombatAction combatAction = _combatActions[i];
 
+            Image combatActionImage = _actionSlots[i].GetComponent<Image>();
+            combatActionImage.sprite = _visuals.GetSpriteForMonsterAction(combatAction.Identifier);
+            combatActionImage.color = Color.white;
+
+            TooltipTarget combatActionTooltipTarget = _actionSlots[i].GetComponent<TooltipTarget>();
+            combatActionTooltipTarget.SetText(combatAction.Name);
+            combatActionTooltipTarget.Enabled = true;
+
             Button combatActionButton = _actionSlots[i].GetComponent<Button>();
-            _actionSlots[i].GetComponentInChildren<TextMeshProUGUI>().text = combatAction.Name;
             combatActionButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight(); _parentInputSystem.InterruptCurrentCoroutines(); });
             combatActionButton.onClick.AddListener(() => GetButtonAction(combatAction)());
 

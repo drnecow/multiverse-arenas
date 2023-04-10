@@ -7,7 +7,7 @@ public class CombatDependencies : MonoBehaviour
 {
     public static CombatDependencies Instance { get; private set; }
     public GridMap Map { get; private set; }
-    public MapHighlight Highlight { get; set; }
+    public MapHighlight Highlight { get; private set; }
     public CombatEventsLogger EventsLogger { get; private set; }
     public CombatManager CombatManager { get; private set; }
 

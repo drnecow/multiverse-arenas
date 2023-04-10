@@ -35,10 +35,12 @@ public class Monster : MonoBehaviour
     public void AddActiveCondition(Condition condition)
     {
         ActiveConditions.Add(condition);
+        OnActiveConditionAdded?.Invoke(condition);
     }
     public void RemoveActiveCondition(Condition condition)
     {
         ActiveConditions.Remove(condition);
+        OnActiveConditionRemoved?.Invoke(condition);
     }
     public Dictionary<Condition, Monster> ConditionSourceMonsters { get; private set; }
     public void AddConditionSourceMonster(Condition condition, Monster monster)
@@ -89,10 +91,6 @@ public class Monster : MonoBehaviour
     private bool _reactionAvailable = true;
     public bool ReactionAvailable { get => _reactionAvailable; set => _reactionAvailable = value; }
 
-    private bool _isDisengaging = false;
-    public bool IsDisengaging { get => _isDisengaging; set => _isDisengaging = value; }
-    private bool _isDodging = false;
-    public bool IsDodging { get => _isDodging; set => _isDodging = value; }
     private int _initiativeRoll;
     public int InitiativeRoll { get => _initiativeRoll; set => _initiativeRoll = value; }
     private int _stealthRoll = -1000;
@@ -107,6 +105,8 @@ public class Monster : MonoBehaviour
     
 
     public event Action<bool> OnMonsterAllegianceChanged;
+    public event Action<Condition> OnActiveConditionAdded;
+    public event Action<Condition> OnActiveConditionRemoved;
 
     public event Action<int> OnMonsterHPChanged;
     public event Action<Monster> OnMonsterHPReducedToZero;

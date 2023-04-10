@@ -18,7 +18,7 @@ public class Dodge : CombatAction
 
         Debug.Log($"{actor.Name} is Dodging");
 
-        actor.IsDodging = true;
+        actor.AddActiveCondition(Condition.Dodging);
         OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
     }
 
