@@ -34,9 +34,11 @@ public abstract class Attack : ScriptableObject
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
 
-        if (actor.StealthRoll > -1000)
+        if (actor.ActiveConditions.Contains(Condition.Hiding))
         {
             actor.StealthRoll = -1000;
+            actor.RemoveActiveCondition(Condition.Hiding);
+            actor.MonsterAnimator.SetMonsterNormalMaterial();
             _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
             _combatDependencies.EventsLogger.LogLocalInfo(actor, "Stealth broken");
         }
@@ -60,15 +62,13 @@ public abstract class Attack : ScriptableObject
         if (toHitRoll == 1)
         {
             // Log critical miss
-            //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Critical miss");
             // TODO: play target dodging animation
+            target.MonsterAnimator.AnimateAvoidingDamage(actor);
         }
         else if (toHitRoll == 20)
         {
             // Log critical hit
-            //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Critical hit");
-            // TODO: play target taking damage animation
-
+            target.MonsterAnimator.AnimateTakingDamage();
             RollAndLogAttackDamage(actor, target, true);
         }
         else
@@ -79,16 +79,15 @@ public abstract class Attack : ScriptableObject
             if (toHitNumber >= target.Stats.ArmorClass)
             {
                 // Log hit
-                //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Hit");
                 // TODO: play target taking damage animation
-
+                target.MonsterAnimator.AnimateTakingDamage();
                 RollAndLogAttackDamage(actor, target, false);
             }
             else
             {
                 // Log miss
-                //_combatDependencies.EventsLogger.LogLocalInfo(actor, "Miss");
                 // TODO: play target dodging animation
+                target.MonsterAnimator.AnimateAvoidingDamage(actor);
             }
         }
     }
@@ -121,9 +120,9 @@ public abstract class Attack : ScriptableObject
         else if (xOffset >= 0 && xOffset < actorSquareSize)
         {
             if (yOffset > 0)
-                actorSpriteRenderer.flipY = true;
-
-            clipName = $"{StringIdentifier}Up";
+                clipName = $"{StringIdentifier}Down";
+            else
+                clipName = $"{StringIdentifier}Up";
         }
         // Conditions for diagonal up/diagonal down attack
         else
@@ -142,11 +141,9 @@ public abstract class Attack : ScriptableObject
         actor.Animator.SetTrigger(clipName);
         return clipLength;
     }
-    private void RollAndLogAttackDamage(Monster actor, Monster target, bool isCrit)
+    public static int GetDamageDiceBonusForSize(Size size)
     {
-        int attackAbilityModifier = actor.Stats.Abilities.GetAbilityModifier(UsedAbility);
-
-        int damageDiceBonusForSize = actor.Stats.Size switch
+        return size switch
         {
             Size.Tiny => 0,
             Size.Small => 0,
@@ -156,6 +153,11 @@ public abstract class Attack : ScriptableObject
             Size.Gargantuan => 3,
             _ => 0
         };
+    }
+    private void RollAndLogAttackDamage(Monster actor, Monster target, bool isCrit)
+    {
+        int attackAbilityModifier = actor.Stats.Abilities.GetAbilityModifier(UsedAbility);
+        int damageDiceBonusForSize = GetDamageDiceBonusForSize(actor.Stats.Size);
 
         int initialDamage = Dice.RollDice(InitialDamageInfo.DamageDie, (InitialDamageInfo.NumberOfDamageDice + damageDiceBonusForSize) * (isCrit ? 2 : 1)) + (IsAbilityModifierAdded ? attackAbilityModifier : 0);
         int damageToTarget = target.TakeDamage(initialDamage, InitialDamageInfo.DamageType);

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using Project.Constants;
 using Project.Utils;
 
 public class PlayerAttackPanel : PlayerActionPanel
@@ -23,8 +24,15 @@ public class PlayerAttackPanel : PlayerActionPanel
         {
             Attack attack = _buttonAttacks[i];
 
+            Image attackImage = _actionSlots[i].GetComponent<Image>();
+            attackImage.sprite = _visuals.GetSpriteForAttack(attack.Identifier);
+            attackImage.color = Color.white;
+
+            TooltipTarget attackTooltipTarget = _actionSlots[i].GetComponent<TooltipTarget>();
+            attackTooltipTarget.SetText(_descriptions.GetAttackDescription(attack.Identifier));
+            attackTooltipTarget.Enabled = true;
+
             Button attackButton = _actionSlots[i].GetComponent<Button>();
-            _actionSlots[i].GetComponentInChildren<TextMeshProUGUI>().text = attack.Name;
             attackButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight(); _parentInputSystem.InterruptCurrentCoroutines(); });
 
             if (attack is MeleeAttack)
@@ -83,6 +91,15 @@ public class PlayerAttackPanel : PlayerActionPanel
                 highlight.HighlightCells(monster.CurrentCoords, Color.green);
             }
 
+        if (_actor.Stats.SpecialAbilities.Contains(SpecialAbility.PackTactics)) {
+            
+            foreach (Monster target in possibleAttackTargets)
+            {
+                if (map.FindMonstersInRadius(target.CurrentCoordsOriginCell, target.Stats.Size, 5).Any(neighbour => neighbour.IsPlayerControlled && neighbour != _actor))
+                    HighlightPackTactics(target);
+            }
+        }
+
         while (true)
         {
             if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
@@ -104,5 +121,10 @@ public class PlayerAttackPanel : PlayerActionPanel
     private IEnumerator HighlightPossibleTargetsOfRangedAttack(RangedAttack rangedAttack)
     {
         yield break;
+    }
+
+    private void HighlightPackTactics(Monster target)
+    {
+        _actor.CombatDependencies.Highlight.CreateMonsterStatusIcon(target, _visuals.GetSpriteForSpecialAbility(SpecialAbility.PackTactics));
     }
 }

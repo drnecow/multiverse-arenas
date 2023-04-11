@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Project.Constants;
 using Project.Dice;
@@ -216,19 +217,53 @@ public class Monster : MonoBehaviour
             Debug.Log($"{Name} could not escape grapple from {grappler.Name}");
     }
 
-    //TODO: implement this method; include pack tactics
+    //TODO: extend this method for remaining conditions
     public RollMode ResolveAdvantageAndDisadvantageToMeleeAttack(Monster target)
     {
-        return RollMode.Normal;
+        bool hasAdvantage = false;
+        bool hasDisadvantage = false;
+
+        // If Pack Tactics is active or the attacker is invisible to target
+        if (!target.VisibleTargets.Contains(this) ||
+            Stats.SpecialAbilities.Contains(SpecialAbility.PackTactics) &&
+            CombatDependencies.Map.FindMonstersInRadius(target.CurrentCoordsOriginCell, target.Stats.Size, 5).Any(monster => monster.IsPlayerControlled == IsPlayerControlled && monster != this))
+                hasAdvantage = true;
+
+        if (target.ActiveConditions.Contains(Condition.Dodging))
+            hasDisadvantage = true;
+
+        if (hasAdvantage && hasDisadvantage)
+            return RollMode.Normal;
+        else if (hasAdvantage && !hasDisadvantage)
+            return RollMode.Advantage;
+        else if (!hasAdvantage && hasDisadvantage)
+            return RollMode.Disadvantage;
+        else
+            return RollMode.Normal;
     }
     //TODO: implement this method
     public RollMode ResolveAdvantageAndDisadvantageToRangedAttack(Monster target, int feetToTarget)
     {
         return RollMode.Normal;
     }
-    //TODO: implement this method
+    //TODO: extend this method for remaining conditions
     public RollMode ResolveAdvantageAndDisadvantageToSkillCheck(Skill skill)
     {
-        return RollMode.Normal;
+        bool hasAdvantage = false;
+        bool hasDisadvantage = false;
+
+        if (skill == Skill.Perception) {
+            if (Stats.SpecialAbilities.Contains(SpecialAbility.KeenSmell) || Stats.SpecialAbilities.Contains(SpecialAbility.KeenVision))
+                hasAdvantage = true;
+        }
+
+        if (hasAdvantage && hasDisadvantage)
+            return RollMode.Normal;
+        else if (hasAdvantage && !hasDisadvantage)
+            return RollMode.Advantage;
+        else if (!hasAdvantage && hasDisadvantage)
+            return RollMode.Disadvantage;
+        else
+            return RollMode.Normal;
     }
 }

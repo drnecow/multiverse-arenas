@@ -21,7 +21,7 @@ public class Seek : CombatAction
         OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
 
         HashSet<Monster> enemies = actor.IsPlayerControlled ? _combatDependencies.CombatManager.EnemyMonsters : _combatDependencies.CombatManager.AlliedMonsters;
-        List<Monster> hiddenEnemies = enemies.Where(enemy => !actor.VisibleTargets.Contains(enemy)).ToList();
+        List<Monster> hiddenEnemies = enemies.Where(enemy => enemy.ActiveConditions.Contains(Condition.Hiding)).ToList();
 
         Debug.Log($"Total enemies: {enemies.Count}");
         Debug.Log($"Hidden enemies: {hiddenEnemies.Count}");
@@ -32,8 +32,12 @@ public class Seek : CombatAction
             if (perceptionCheck > enemy.StealthRoll)
             {
                 actor.VisibleTargets.Add(enemy);
+
+                enemy.StealthRoll = -1000;
+                enemy.RemoveActiveCondition(Condition.Hiding);
                 enemy.MonsterAnimator.SetMonsterNormalMaterial();
-                _combatDependencies.EventsLogger.LogLocalInfo(enemy, "Found");
+                _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
+                _combatDependencies.EventsLogger.LogLocalInfo(actor, "Found");
             }
     }
 

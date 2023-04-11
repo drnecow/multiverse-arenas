@@ -22,8 +22,16 @@ public class Hide : CombatAction
         OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
 
         int stealthRoll = actor.MakeSkillCheck(Skill.Stealth);
-        actor.StealthRoll = stealthRoll;
-        actor.CombatDependencies.CombatManager.HandleMonsterEnteringStealth(actor, stealthRoll);
+        HashSet<Monster> enemies = actor.IsPlayerControlled ? actor.CombatDependencies.CombatManager.EnemyMonsters : actor.CombatDependencies.CombatManager.AlliedMonsters;
+
+        Debug.Log($"Stealth roll: {stealthRoll}");
+        if (enemies.All(enemy => enemy.Stats.GetPassiveSkillValue(Skill.Perception) < stealthRoll))
+        {
+            actor.StealthRoll = stealthRoll;
+            actor.AddActiveCondition(Condition.Hiding);
+            actor.MonsterAnimator.SetMonsterStealthMaterial();
+            actor.CombatDependencies.CombatManager.HandleMonsterEnteringStealth(actor);
+        }
     }
 
     public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
@@ -39,6 +47,6 @@ public class Hide : CombatAction
 
         bool isUsedActionConsumed = base.CheckPlayerButtonInteractabilityCondition(actor, usedAction);
 
-        return areThereAdjacentObstacles && isUsedActionConsumed;
+        return areThereAdjacentObstacles && !actor.ActiveConditions.Contains(Condition.Hiding) && isUsedActionConsumed;
     }
 }

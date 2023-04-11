@@ -9,6 +9,7 @@ public abstract class PlayerActionPanel : MonoBehaviour
     [SerializeField] protected List<GameObject> _actionSlots;
     [SerializeField] protected VisualAssets _visuals;
     [SerializeField] private Color _initialColor;
+    [SerializeField] protected TextDescriptions _descriptions;
     protected List<Button> _buttons;
 
     protected Monster _actor;

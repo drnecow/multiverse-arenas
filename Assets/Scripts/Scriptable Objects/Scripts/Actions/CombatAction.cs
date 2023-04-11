@@ -29,9 +29,10 @@ public abstract class CombatAction : ScriptableObject
 
         if (consumedAction != CombatActionType.FreeAction)
         {
-            if (actor.StealthRoll > -1000)
-            {
+            if (actor.ActiveConditions.Contains(Condition.Hiding)) {
                 actor.StealthRoll = -1000;
+                actor.RemoveActiveCondition(Condition.Hiding);
+                actor.MonsterAnimator.SetMonsterNormalMaterial();
                 _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
                 _combatDependencies.EventsLogger.LogLocalInfo(actor, "Stealth broken");
             }

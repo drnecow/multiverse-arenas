@@ -6,21 +6,15 @@ using UnityEngine.EventSystems;
 public class TooltipTarget : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     private string _text = "Test text";
-    private RectTransform _rectTransform;
 
     private bool _enabled = false;
     public bool Enabled { get => _enabled; set => _enabled = value; }
 
 
-    private void Awake()
-    {
-        _rectTransform = GetComponent<RectTransform>();    
-    }
-
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (_enabled)
-            Tooltip.Show(_text, _rectTransform);
+            Tooltip.Show(_text);
     }
 
     public void OnPointerExit(PointerEventData eventData)

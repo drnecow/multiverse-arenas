@@ -10,10 +10,6 @@ public class CombatEventsLogger : MonoBehaviour
     [SerializeField] private GameObject _screenInfoPrefab;
     [SerializeField] private GameObject _damageNumberPrefab;
 
-    public void TestAnimationEvents()
-    {
-        StartCoroutine(AnimateScreenInfo("Attacked diagonal down"));
-    }
 
     public void LogDamageNumber(Monster targetMonster, int damagePoints)
     {
@@ -76,7 +72,6 @@ public class CombatEventsLogger : MonoBehaviour
     public IEnumerator AnimateScreenInfo(string infoText)
     {
         GameObject screenTextObject = Instantiate(_screenInfoPrefab);
-        //screenTextObject.transform.SetParent(_UIContainer.transform);
 
         TextMeshProUGUI screenText = screenTextObject.GetComponentInChildren<TextMeshProUGUI>();
         screenText.text = infoText;

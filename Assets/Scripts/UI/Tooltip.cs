@@ -10,7 +10,7 @@ public class Tooltip : MonoBehaviour
 
     private TextMeshProUGUI _text;
     private RectTransform _rectTransform;
-    private RectTransform _initialParent;
+    private float _backgroundSizeX;
 
 
     private void Awake()
@@ -18,7 +18,6 @@ public class Tooltip : MonoBehaviour
         _instance = this;
         _text = GetComponentInChildren<TextMeshProUGUI>();
         _rectTransform = GetComponent<RectTransform>();
-        _initialParent = _rectTransform.parent.GetComponent<RectTransform>();
     }
     /*private void Update()
     {
@@ -26,16 +25,22 @@ public class Tooltip : MonoBehaviour
         {
             Vector2 localPoint;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(transform.parent.GetComponent<RectTransform>(), Input.mousePosition, null, out localPoint);
-            transform.localPosition = localPoint;
+            transform.localPosition = new Vector2(localPoint.x - _backgroundSizeX, localPoint.y);
         }   
     }*/
 
-    public static void Show(string text, RectTransform parent)
+    public static void Show(string text)
     {
         _instance._text.text = text;
-        _instance.transform.SetParent(parent);
-        _instance._rectTransform.localPosition = new Vector2(parent.sizeDelta.x / 2, -(parent.sizeDelta.y / 2));
-        _instance.transform.SetParent(_instance._initialParent);
+        Vector2 textSize = new Vector2(_instance._text.preferredWidth * 2f, _instance._text.preferredHeight * 2f);
+        _instance._text.GetComponent<RectTransform>().sizeDelta = textSize;
+        Vector2 backgroundSize = new Vector2(_instance._text.preferredWidth + 7 * 2f, _instance._text.preferredHeight + 7 * 2f);
+        _instance._backgroundSizeX = backgroundSize.x;
+        _instance._rectTransform.sizeDelta = backgroundSize;
+
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(_instance.transform.parent.GetComponent<RectTransform>(), Input.mousePosition, null, out localPoint);
+        _instance.transform.localPosition = new Vector2(localPoint.x - _instance._backgroundSizeX, localPoint.y);
 
         _instance.gameObject.SetActive(true);
     }

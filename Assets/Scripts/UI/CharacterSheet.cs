@@ -16,6 +16,8 @@ public class CharacterSheet : MonoBehaviour
     [SerializeField] private VisualAssets _visuals;
     [SerializeField] private Color _friendlyColor;
     [SerializeField] private Color _enemyColor;
+    [SerializeField] private TextDescriptions _descriptions;
+
     [SerializeField] private List<Image> _coloredElements;
 
     [SerializeField] private Image _monsterImage;
@@ -49,6 +51,10 @@ public class CharacterSheet : MonoBehaviour
     [SerializeField] private GameObject _speedOrSenseIconPrefab;
     [SerializeField] private RectTransform _senseIconsParent;
     [SerializeField] private RectTransform _speedIconsParent;
+
+    [SerializeField] private GameObject _attackRowPrefab;
+    [SerializeField] private RectTransform _attackRowsParent;
+
 
     private Vector3 _lastMouseCoords = new Vector3(-1000, -1000);
 
@@ -156,6 +162,8 @@ public class CharacterSheet : MonoBehaviour
 
         SetSenses(monster);
         SetSpeed(monster);
+
+        SetAttacks(monster);
     }
 
     private void SetResistances(List<DamageType> monsterDamageResistances)
@@ -230,6 +238,11 @@ public class CharacterSheet : MonoBehaviour
             Image image = conditionIcon.GetComponentInChildren<Image>();
             image.sprite = conditionIconSprite;
             image.color = Color.white;
+
+            TooltipTarget tooltipTarget = conditionIcon.GetComponent<TooltipTarget>();
+            tooltipTarget.SetText(_descriptions.GetConditionDescription(condition));
+            tooltipTarget.Enabled = true;
+
             conditionIcon.transform.SetParent(_conditionIconsParent);
 
             _currentConditionIcons.Add(condition, conditionIcon);
@@ -250,6 +263,11 @@ public class CharacterSheet : MonoBehaviour
         Image image = conditionIcon.GetComponentInChildren<Image>();
         image.sprite = conditionIconSprite;
         image.color = Color.white;
+
+        TooltipTarget tooltipTarget = conditionIcon.GetComponent<TooltipTarget>();
+        tooltipTarget.SetText(_descriptions.GetConditionDescription(condition));
+        tooltipTarget.Enabled = true;
+
         conditionIcon.transform.SetParent(_conditionIconsParent);
 
         _currentConditionIcons.Add(condition, conditionIcon);
@@ -279,6 +297,11 @@ public class CharacterSheet : MonoBehaviour
             Image image = featureIcon.GetComponentInChildren<Image>();
             image.sprite = featureIconSprite;
             image.color = Color.white;
+
+            TooltipTarget tooltipTarget = featureIcon.GetComponent<TooltipTarget>();
+            tooltipTarget.SetText(_descriptions.GetSpecialAbilityDescription(feature));
+            tooltipTarget.Enabled = true;
+
             featureIcon.transform.SetParent(_featureIconsParent);
         }
     }
@@ -308,6 +331,10 @@ public class CharacterSheet : MonoBehaviour
 
                 TextMeshProUGUI rowText = rowInfo.Text;
                 rowText.text = senses[sense].ToString();
+
+                TooltipTarget tooltipTarget = senseRow.GetComponent<TooltipTarget>();
+                tooltipTarget.SetText(_descriptions.GetSenseDescription(sense));
+                tooltipTarget.Enabled = true;
 
                 senseRow.transform.SetParent(_senseIconsParent.transform);
             }
@@ -340,8 +367,58 @@ public class CharacterSheet : MonoBehaviour
                 TextMeshProUGUI rowText = rowInfo.Text;
                 rowText.text = speedValues[speed].ToString();
 
+                TooltipTarget tooltipTarget = speedRow.GetComponent<TooltipTarget>();
+                tooltipTarget.SetText(_descriptions.GetSpeedDescription(speed));
+                tooltipTarget.Enabled = true;
+
                 speedRow.transform.SetParent(_speedIconsParent.transform);
             }
+        }
+    }
+    private void SetAttacks(Monster monster)
+    {
+        foreach (RectTransform child in _attackRowsParent)
+            if (child.GetSiblingIndex() != 0)
+                Destroy(child.gameObject);
+
+        Dictionary<MeleeAttack, int> meleeAttacks = monster.CombatActions.MeleeAttacks;
+        Dictionary<RangedAttack, int> rangedAttacks = monster.CombatActions.RangedAttacks;
+
+        Dictionary<Attack, int> combinedAttacks = new Dictionary<Attack, int>();
+        foreach (KeyValuePair<MeleeAttack, int> meleeAttackIntPair in meleeAttacks)
+            combinedAttacks.Add(meleeAttackIntPair.Key, meleeAttackIntPair.Value);
+        foreach (KeyValuePair<RangedAttack, int> rangedAttackIntPair in rangedAttacks)
+            combinedAttacks.Add(rangedAttackIntPair.Key, rangedAttackIntPair.Value);
+
+        foreach (Attack attack in combinedAttacks.Keys)
+        {
+            GameObject attackRow = Instantiate(_attackRowPrefab);
+            AttackRowInfo attackRowInfo = attackRow.GetComponent<AttackRowInfo>();
+
+            attackRowInfo.AttackName.text = attack.Name;
+            attackRowInfo.AttackDistance.text = (attack is MeleeAttack) ? (attack as MeleeAttack).Reach.ToString() + " ft." : 
+                (attack as RangedAttack).NormalRange.ToString() + "/" + (attack as RangedAttack).DisadvantageRange.ToString() + " ft.";
+            attackRowInfo.ToHitBonus.text = $"1d20 + {monster.Stats.Abilities.GetAbilityModifier(attack.UsedAbility)} + {monster.Stats.ProficiencyBonus}";
+
+
+            string damageText = $"{attack.InitialDamageInfo.NumberOfDamageDice + Attack.GetDamageDiceBonusForSize(monster.Stats.Size)}d{(int)attack.InitialDamageInfo.DamageDie} ";
+            if (attack.IsAbilityModifierAdded)
+                damageText += $"+ {monster.Stats.Abilities.GetAbilityModifier(attack.UsedAbility)}";
+
+            foreach (AttackDamageInfo additionalDamageInfo in attack.AdditionalDamageInfo)
+                damageText += $"+ {additionalDamageInfo.NumberOfDamageDice}d{(int)additionalDamageInfo.DamageDie} ";
+            damageText.TrimEnd();
+
+            attackRowInfo.Damage.text = damageText;
+
+
+            Image[] rowImages = attackRow.GetComponentsInChildren<Image>();
+            Color imageColor = monster.IsPlayerControlled ? _friendlyColor : _enemyColor;
+
+            foreach (Image image in rowImages)
+                image.color = imageColor;
+
+            attackRow.transform.SetParent(_attackRowsParent);
         }
     }
 

@@ -31,7 +31,7 @@ public class PlayerCombatActionPanel : PlayerActionPanel
             combatActionImage.color = Color.white;
 
             TooltipTarget combatActionTooltipTarget = _actionSlots[i].GetComponent<TooltipTarget>();
-            combatActionTooltipTarget.SetText(combatAction.Name);
+            combatActionTooltipTarget.SetText(_descriptions.GetMonsterActionDescription(combatAction.Identifier));
             combatActionTooltipTarget.Enabled = true;
 
             Button combatActionButton = _actionSlots[i].GetComponent<Button>();
@@ -138,7 +138,7 @@ public class PlayerCombatActionPanel : PlayerActionPanel
     }
     private List<Coords> FindAndHighlightSingleCellMovementPath(Coords targetCoords, GridMap map, MapHighlight highlight, bool isDash)
     {
-        List<Coords> path = map.FindPathForSingleCellEntity(_actor.CurrentCoordsOriginCell, targetCoords);
+        List<Coords> path = map.FindPathForSingleCellEntity(_actor.CurrentCoordsOriginCell, targetCoords, targetMonster:null);
 
         if (path != null)
         {

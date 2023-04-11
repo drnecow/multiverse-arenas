@@ -116,6 +116,7 @@ public class GridMap : MonoBehaviour
     private float _cellSize = ConstantValues.MAP_CELL_SIZE;
     [SerializeField] private Vector3 _originPosition;
     [SerializeField] private List<Obstacle> _initialObstacles;
+    public HashSet<Obstacle> Obstacles { get; private set; }
 
     private GridNode[,] _contents;
 
@@ -131,6 +132,8 @@ public class GridMap : MonoBehaviour
     private void Awake()
     {
         _contents = new GridNode[_width, _height];
+        Obstacles = new HashSet<Obstacle>();
+        
         if (_debugViewEnabled)
         {
             _markupText = new TextMesh[_width, _height];
@@ -408,6 +411,7 @@ public class GridMap : MonoBehaviour
                 return;
             }
 
+            Obstacles.Add(obstacleToPlace);
             foreach (Coords targetCoord in targetCoords)
             {
                 GetGridObjectAtCoords(targetCoord).Obstacle = obstacleToPlace;
@@ -474,6 +478,60 @@ public class GridMap : MonoBehaviour
         }
 
         if (targetMonster != null)
+            path.Remove(endCoords);
+
+        path.Reverse();
+        return path;
+    }
+    public List<Coords> FindPathForSingleCellEntity(Coords startCoords, Coords endCoords, Obstacle targetObstacle = null)
+    {
+        if (!ValidateCoords(endCoords))
+            return null;
+
+        if (startCoords == endCoords)
+            return null;
+
+        GridNode endNode = GetGridObjectAtCoords(endCoords);
+
+        if (targetObstacle != null && endNode.Obstacle != targetObstacle || targetObstacle == null && !endNode.IsFree)
+            return null;
+
+        Queue<Coords> frontier = new Queue<Coords>();
+        frontier.Enqueue(startCoords);
+
+        Dictionary<Coords, Coords> cameFrom = new Dictionary<Coords, Coords>();
+        cameFrom.Add(startCoords, new Coords(-1000, -1000));
+
+        while (frontier.Count > 0)
+        {
+            Coords currentCoords = frontier.Dequeue();
+
+            if (currentCoords == endCoords)
+                break;
+
+            List<Coords> neighbours = GetValidSingleCellNeighbours(GetNeighboursForSingleCellEntity(currentCoords), targetObstacle);
+
+            foreach (Coords neighbour in neighbours)
+                if (!cameFrom.ContainsKey(neighbour))
+                {
+                    frontier.Enqueue(neighbour);
+                    cameFrom.Add(neighbour, currentCoords);
+                }
+        }
+
+        List<Coords> path = new List<Coords>();
+        Coords currentPathCoords = endCoords;
+
+        while (currentPathCoords != startCoords)
+        {
+            if (!cameFrom.ContainsKey(currentPathCoords))
+                return null;
+
+            path.Add(currentPathCoords);
+            currentPathCoords = cameFrom[currentPathCoords];
+        }
+
+        if (targetObstacle != null)
             path.Remove(endCoords);
 
         path.Reverse();
@@ -688,6 +746,11 @@ public class GridMap : MonoBehaviour
 
         return shortestPath;
     }
+    // TODO: implement this method
+    public List<List<Coords>> FindPathToObstacleForMultipleCellEntity(Monster entity, Obstacle obstacle)
+    {
+        return null;
+    }
     private List<Coords> GetFirstLineOfCell(Coords originCell, int squareSide, Direction directionFromCell)
     {
         List<Coords> line = new List<Coords>();
@@ -752,6 +815,28 @@ public class GridMap : MonoBehaviour
             else
             {
                 if (neighbourNode.IsFree || neighbourNode.Monster == targetMonster)
+                    validNeighbours.Add(neighbour);
+            }
+        }
+
+        return validNeighbours;
+    }
+    private List<Coords> GetValidSingleCellNeighbours(List<Coords> neighbours, Obstacle targetObstacle)
+    {
+        List<Coords> validNeighbours = new List<Coords>();
+
+        foreach (Coords neighbour in neighbours)
+        {
+            GridNode neighbourNode = GetGridObjectAtCoords(neighbour);
+
+            if (targetObstacle == null)
+            {
+                if (neighbourNode.IsFree)
+                    validNeighbours.Add(neighbour);
+            }
+            else
+            {
+                if (neighbourNode.IsFree || neighbourNode.Obstacle == targetObstacle)
                     validNeighbours.Add(neighbour);
             }
         }

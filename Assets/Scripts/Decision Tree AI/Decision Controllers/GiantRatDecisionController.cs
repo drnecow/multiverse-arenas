@@ -38,6 +38,18 @@ public class GiantRatDecisionController : MonsterDecisionController
                 DoSequenceOfActionsAndEndTurn(moveAction, () => _biteAttack.MakeMeleeAttack(_actor, _closestTarget));
             });
 
+        DTreeLeaf moveToClosestObstacleAndHide = new DTreeLeaf("Move to closest obstacle and hide",
+            () =>
+            {
+                Action moveAction;
+                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
+                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _singleCellPathToObstacle, CombatActionType.FreeAction);
+                else
+                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _multipleCellPathToObstacle, CombatActionType.FreeAction);
+
+                DoSequenceOfActionsAndEndTurn(moveAction, () => _commonActions[MonsterActionType.Hide].DoAction(_actor, CombatActionType.MainAction));
+            });
+
         DTreeLeaf dashToClosestEnemy = new DTreeLeaf("Dash to closest enemy",
             () => { Action dashAction;
                 if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
@@ -105,9 +117,32 @@ public class GiantRatDecisionController : MonsterDecisionController
                     return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _multipleCellPathToTarget.Count;
             });
 
+        DTreeBinaryConditional doIHaveEnoughSpeedToReachClosestObstacleThisTurn = new DTreeBinaryConditional("Do I have enough speed to reach closest obstacle on this turn?",
+            () =>
+            {
+                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
+                {
+                    _singleCellPathToObstacle = FindSingleCellPathToClosestObstacle();
+                    if (_singleCellPathToObstacle != null)
+                        return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _singleCellPathToObstacle.Count;
+                    else
+                        return false;
+                }
+                else
+                {
+                    _multipleCellPathToObstacle = FindMultipleCellPathToClosestObstacle();
+                    if (_multipleCellPathToObstacle != null)
+                        return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _multipleCellPathToObstacle.Count;
+                    else
+                        return false;
+                }
+            });
+
+        doIHaveEnoughSpeedToReachClosestObstacleThisTurn.SetTrueConditionChild(moveToClosestObstacleAndHide);
+        doIHaveEnoughSpeedToReachClosestObstacleThisTurn.SetFalseConditionChild(dashToClosestEnemy);
         
         doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetTrueConditionChild(moveToClosestEnemyAndAttack);
-        doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetFalseConditionChild(dashToClosestEnemy);
+        doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetFalseConditionChild(doIHaveEnoughSpeedToReachClosestObstacleThisTurn);
 
         isThereAPathToEnemyAtAll.SetTrueConditionChild(doIHaveEnoughSpeedToReachClosestEnemyThisTurn);
         isThereAPathToEnemyAtAll.SetFalseConditionChild(takeDodgeAction);

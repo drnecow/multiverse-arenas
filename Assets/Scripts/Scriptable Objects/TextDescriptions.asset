@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f3c149168dd3c34cae2b3a7c54e2b91, type: 3}
+  m_Name: TextDescriptions
+  m_EditorClassIdentifier: 
+  _attackTexts:
+    m_keys: 02000000
+    m_values:
+    - 'Bite Attack: 1d4+Dex base Piercing damage'
+  _conditionTexts:
+    m_keys: 0f0000001000000011000000
+    m_values:
+    - 'Disengage: This monster doesn''t trigger opportunity attacks.'
+    - 'Dodge: Attacks against this monster have Disadvantage.'
+    - 'Hidden: Until an enemy takes a successful Seek action or until this monster
+      attacks or takes an Action, it is invisible by enemies.'
+  _monsterActionTexts:
+    m_keys: 0200000003000000040000000600000007000000
+    m_values:
+    - 'Dash: Move for up to monster''s Speed, once.'
+    - 'Disengage: Until the end of this monster''s turn, its movement doesn''t trigger
+      opportunity attacks [coming soon].'
+    - 'Dodge: Until the start of this monster''s next turn, attacks made against
+      it have Disadvantage.'
+    - 'Hide: If there is an adjacent obstacle, this monster can make a Stealth check.
+      If the result is higher than an enemy''s passive Perception (10 + Perception
+      bonus), that enemy can''t target this monster until it made a successful Seek
+      action.'
+    - 'Seek: Make a Perception check. If it is higher than a hidden enemy''s Stealth
+      roll, that enemy is revealed.'
+  _specialAbilityTexts:
+    m_keys: 0400000003000000
+    m_values:
+    - 'Pack Tactics: This monster has advantage on an attack roll against an enemy
+      if at least one of the monster''s allies is within 5 feet of the creature.'
+    - 'Keen Smell: This monster has advantage on Perception checks.'
+  _senseTexts:
+    m_keys: 0100000003000000
+    m_values:
+    - Distance (in feet) of normal vision, regular vision of a monster. Typically
+      is unlimited.
+    - Distance (in feet) of Darkvision, the ability to see in low-light and darkness.
+  _speedTexts:
+    m_keys: 01000000
+    m_values:
+    - 'Walking speed: Distance in feet that a monster can cover on foot in one round.
+      5 feet = 1 cell.'

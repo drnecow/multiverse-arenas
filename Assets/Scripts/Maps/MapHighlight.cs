@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class MapHighlight : MonoBehaviour
@@ -8,9 +9,12 @@ public class MapHighlight : MonoBehaviour
     private GameObject[,] _cells;
     private List<Coords> _currentlyHighlightedCells;
     private TextMeshProUGUI _currentMapText = null;
+    private Dictionary<Monster, List<GameObject>> _monsterStatusIcons;
+
 
     [SerializeField] private GameObject _highlightSquarePrefab;
     [SerializeField] private GameObject _onMapTextPrefab;
+    [SerializeField] private GameObject _monsterStatusIconPrefab;
     [SerializeField] private Transform _highlightParent;
     private GridMap _map;
 
@@ -20,6 +24,7 @@ public class MapHighlight : MonoBehaviour
         _map = gameObject.GetComponent<GridMap>();
         _cells = new GameObject[_map.Width, _map.Height];
         _currentlyHighlightedCells = new List<Coords>();
+        _monsterStatusIcons = new Dictionary<Monster, List<GameObject>>();
 
 
         for (int i = 0; i < _cells.GetLength(0); i++)
@@ -69,6 +74,18 @@ public class MapHighlight : MonoBehaviour
         _currentMapText.text = text;
         _currentMapText.transform.position = _map.XYToWorldPosition(cell);
     }
+    public void CreateMonsterStatusIcon(Monster monster, Sprite iconSprite)
+    {
+        GameObject statusIcon = Instantiate(_monsterStatusIconPrefab);
+        statusIcon.GetComponentInChildren<Image>().sprite = iconSprite;
+        statusIcon.transform.SetParent(monster.transform);
+        statusIcon.transform.localPosition = new Vector3 (5, 5);
+
+        if (_monsterStatusIcons.ContainsKey(monster))
+            _monsterStatusIcons[monster].Add(statusIcon);
+        else
+            _monsterStatusIcons.Add(monster, new List<GameObject>() { statusIcon });
+    }
     public void ClearHighlight()
     {
         foreach (Coords cell in _currentlyHighlightedCells)
@@ -80,6 +97,12 @@ public class MapHighlight : MonoBehaviour
             square.GetComponent<SpriteRenderer>().color = color;
         }
         _currentlyHighlightedCells.Clear();
+
+        foreach (Monster monster in _monsterStatusIcons.Keys)
+        {
+            foreach (GameObject statusIcon in _monsterStatusIcons[monster])
+                Destroy(statusIcon);
+        }
 
         if (_currentMapText != null)
         {

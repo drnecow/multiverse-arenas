@@ -75,7 +75,8 @@ namespace Project.Constants
         Stunned = 13,
         Unconscious = 14,
         Disengaging = 15,
-        Dodging = 16
+        Dodging = 16,
+        Hiding = 17
     }
 
     public enum DamageType

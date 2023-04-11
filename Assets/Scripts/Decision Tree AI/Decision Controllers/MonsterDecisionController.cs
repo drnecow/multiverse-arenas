@@ -12,6 +12,9 @@ public class MonsterDecisionController : MonoBehaviour
     protected List<Coords> _singleCellPathToTarget;
     protected List<List<Coords>> _multipleCellPathToTarget;
 
+    protected List<Coords> _singleCellPathToObstacle;
+    protected List<List<Coords>> _multipleCellPathToObstacle;
+
     protected GridMap _map;
     protected DTreeRoot _decisionTreeRoot;
 
@@ -158,6 +161,37 @@ public class MonsterDecisionController : MonoBehaviour
         }
 
         return closestEnemy;
+    }
+    public List<Coords> FindSingleCellPathToClosestObstacle()
+    {
+        List<List<Coords>> pathsToAvailableObstacles = new List<List<Coords>>();
+        Coords actorOriginCell = _actor.CurrentCoordsOriginCell;
+
+        foreach (Obstacle obstacle in _actor.CombatDependencies.Map.Obstacles)
+        {
+            List<Coords> pathToObstacle = _map.FindPathForSingleCellEntity(actorOriginCell, obstacle.CurrentCoords[0], obstacle);
+
+            if (pathToObstacle != null && pathToObstacle.Count > 0)
+                pathsToAvailableObstacles.Add(pathToObstacle);
+        }
+
+        if (pathsToAvailableObstacles.Count == 0)
+            return null;
+
+        List<Coords> pathToClosestObstacle = pathsToAvailableObstacles[0];
+        for (int i = 1; i < pathsToAvailableObstacles.Count; i++)
+        {
+            List<Coords> currentPath = pathsToAvailableObstacles[i];
+
+            if (currentPath.Count < pathToClosestObstacle.Count)
+                pathToClosestObstacle = currentPath;
+        }
+
+        return pathToClosestObstacle;
+    }
+    public List<List<Coords>> FindMultipleCellPathToClosestObstacle()
+    {
+        return null;
     }
 
     public void DoSequenceOfActionsAndEndTurn(Action monsterAction, params Action[] additionalActions)

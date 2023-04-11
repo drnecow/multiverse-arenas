@@ -26,6 +26,7 @@ public class Disengage : CombatAction
 
     public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
     {
-        return base.CheckPlayerButtonInteractabilityCondition(actor, usedAction);
+        return false; // While opportunity attacks aren't implemented, Disengage is disabled
+        //return base.CheckPlayerButtonInteractabilityCondition(actor, usedAction);
     }
 }

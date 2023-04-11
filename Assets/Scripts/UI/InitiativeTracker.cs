@@ -169,7 +169,7 @@ public class InitiativeTracker : MonoBehaviour
         else
             infoItem = Instantiate(_enemyInitiativeInfoPrefab);
 
-        infoItem.transform.SetParent(_contentParent);
+        infoItem.transform.SetParent(_contentParent, false);
         _displayedGameObjects.AddLast(infoItem);
 
         MonsterInitiativeInfo info = infoItem.GetComponent<MonsterInitiativeInfo>();
@@ -178,7 +178,7 @@ public class InitiativeTracker : MonoBehaviour
     private void InsertRoundSeparator()
     {
         GameObject roundSeparator = Instantiate(_roundSeparatorPrefab);
-        roundSeparator.transform.SetParent(_contentParent);
+        roundSeparator.transform.SetParent(_contentParent, false);
         _displayedGameObjects.AddLast(roundSeparator);
 
         roundSeparator.GetComponentInChildren<TextMeshProUGUI>().text = $"Round {_nextRound}";

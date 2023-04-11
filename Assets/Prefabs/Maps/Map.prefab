@@ -193,6 +193,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _highlightSquarePrefab: {fileID: 3512229867279002497, guid: a7935e9c62dca69488b0d84cb3fcd4f3, type: 3}
   _onMapTextPrefab: {fileID: 3274339738159504460, guid: 9f7d51ab3bdccac42aa0cf62faf0b31c, type: 3}
+  _monsterStatusIconPrefab: {fileID: 5674354883608768982, guid: f87d3346a4ca4224c844a46d8638ad1c, type: 3}
   _highlightParent: {fileID: 7345232383188184458}
 --- !u!1001 &84928749187631725
 PrefabInstance:

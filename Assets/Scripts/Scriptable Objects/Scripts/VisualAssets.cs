@@ -12,6 +12,7 @@ public class VisualAssets : ScriptableObject
     [SerializeField] private Sprite _defaultSprite;
 
     [SerializeField] private MonsterActionTypeSpriteDictionary _monsterActionSprites;
+    [SerializeField] private AttackTypeSpriteDictionary _attackSprites;
     [SerializeField] private DamageTypeSpriteDictionary _damageTypeSprites;
     [SerializeField] private ConditionSpriteDictionary _conditionSprites;
     [SerializeField] private SpecialAbilitySpriteDictionary _specialAbilitySprites;
@@ -23,6 +24,13 @@ public class VisualAssets : ScriptableObject
     {
         if (_monsterActionSprites.ContainsKey(monsterAction))
             return _monsterActionSprites[monsterAction];
+        else
+            return _defaultSprite;
+    }
+    public Sprite GetSpriteForAttack(AttackType attack)
+    {
+        if (_attackSprites.ContainsKey(attack))
+            return _attackSprites[attack];
         else
             return _defaultSprite;
     }

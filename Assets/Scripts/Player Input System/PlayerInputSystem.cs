@@ -277,7 +277,7 @@ public class PlayerInputSystem : MonoBehaviour
     }
     private List<Coords> FindAndHighlightSingleCellMovementPath(Coords targetCoords, GridMap map, MapHighlight highlight)
     {
-        List<Coords> path = map.FindPathForSingleCellEntity(_actor.CurrentCoordsOriginCell, targetCoords);
+        List<Coords> path = map.FindPathForSingleCellEntity(_actor.CurrentCoordsOriginCell, targetCoords, targetMonster:null);
 
         if (path != null)
         {

@@ -32,6 +32,9 @@ public class CombatManager : MonoBehaviour
         EnemyMonsters = new HashSet<Monster>();
 
         _initiativeOrder = new Queue<Monster>();
+
+        OnWinGame += () => _playerInputSystem.gameObject.SetActive(false);
+        OnLoseGame += () => _playerInputSystem.gameObject.SetActive(false);
     }
 
     private void Start()
@@ -131,8 +134,6 @@ public class CombatManager : MonoBehaviour
             _characterSheet.SetPinnedMonsterAndItsInfo(actor);
             RestoreMonsterResources(actor);
 
-            SetMaterialsOfOtherMonsters(actor);
-
             if (actor.IsPlayerControlled)
             {
                 _playerInputSystem.gameObject.SetActive(true);
@@ -160,38 +161,13 @@ public class CombatManager : MonoBehaviour
 
         monster.RemoveActiveCondition(Condition.Dodging);
     }
-    private void SetMaterialsOfOtherMonsters(Monster monster)
-    {
-        HashSet<Monster> opposingMonsters = monster.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
-        HashSet<Monster> allyMonsters = monster.IsPlayerControlled ? AlliedMonsters : EnemyMonsters;
 
-        foreach (Monster opposingMonster in opposingMonsters)
-        {
-            if (!monster.VisibleTargets.Contains(opposingMonster))
-            {
-                opposingMonster.MonsterAnimator.SetMonsterStealthMaterial();
-            }
-            else
-            {
-                opposingMonster.MonsterAnimator.SetMonsterNormalMaterial();
-            }
-        }
-
-        foreach (Monster allyMonster in allyMonsters)
-            allyMonster.MonsterAnimator.SetMonsterNormalMaterial();
-    }
-
-    public void HandleMonsterEnteringStealth(Monster monster, int stealthRoll)
+    public void HandleMonsterEnteringStealth(Monster monster)
     {
         HashSet<Monster> oppositeSideMonsters = monster.IsPlayerControlled ? EnemyMonsters : AlliedMonsters;
 
         foreach (Monster opposingMonster in oppositeSideMonsters)
-        {
-            int opposingMonsterPerception = opposingMonster.Stats.GetPassiveSkillValue(Skill.Perception);
-            
-            if (opposingMonsterPerception < stealthRoll)
-                opposingMonster.VisibleTargets.Remove(monster);
-        }
+            opposingMonster.VisibleTargets.Remove(monster);
     }
     public void HandleMonsterBreakingStealth(Monster monster)
     {
@@ -199,8 +175,6 @@ public class CombatManager : MonoBehaviour
 
         foreach (Monster opposingMonster in oppositeSideMonsters)
             opposingMonster.VisibleTargets.Add(monster);
-
-        monster.MonsterAnimator.SetMonsterNormalMaterial();
     }
     private void RemoveMonsterFromGame(Monster monster)
     {
