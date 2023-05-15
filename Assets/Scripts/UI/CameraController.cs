@@ -10,10 +10,12 @@ public class CameraController : MonoBehaviour
     private bool _movementActive;
     private Vector2 _lastMousePosition;
 
+    Monster _focusMonster;
+
     [SerializeField] private float _moveSpeed = 30f;
 
-    private float _minZoomBound = 10f;
-    private float _maxZoomBound = 85f;
+    [SerializeField] private float _minZoomBound = 15f;
+    [SerializeField] private float _maxZoomBound = 85f;
     private float _currentOrthSize = 45f;
 
 
@@ -26,6 +28,18 @@ public class CameraController : MonoBehaviour
     {
         HandleCameraMovement();
         HandleCameraZoom();
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (_focusMonster != null)
+                _virtualCamera.Follow = _focusMonster.transform;
+        }
+    }
+
+    public void FocusCameraOnMonster(Monster monster)
+    {
+        _virtualCamera.Follow = monster.transform;
+        _focusMonster = monster;
     }
 
     private void HandleCameraMovement()
@@ -35,6 +49,7 @@ public class CameraController : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             _movementActive = true;
+            _virtualCamera.Follow = null;
             _lastMousePosition = Input.mousePosition;
         }
         if (Input.GetMouseButtonUp(1))
@@ -47,8 +62,8 @@ public class CameraController : MonoBehaviour
             Vector2 mouseMovementDelta = (Vector2)Input.mousePosition - _lastMousePosition;
 
             float dragPanSpeed = 1f;
-            inputDir.x = mouseMovementDelta.x * dragPanSpeed;
-            inputDir.y = mouseMovementDelta.y * dragPanSpeed;
+            inputDir.x = -(mouseMovementDelta.x * dragPanSpeed);
+            inputDir.y = -(mouseMovementDelta.y * dragPanSpeed);
 
             _lastMousePosition = Input.mousePosition;
         }
@@ -56,7 +71,6 @@ public class CameraController : MonoBehaviour
         Vector3 moveDir = new Vector3(inputDir.x, inputDir.y);
         transform.position += moveDir * _moveSpeed * Time.deltaTime;
     }
-
     private void HandleCameraZoom()
     {
         if (Input.mouseScrollDelta.y > 0)

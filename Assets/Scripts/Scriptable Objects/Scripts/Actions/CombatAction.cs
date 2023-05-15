@@ -20,7 +20,7 @@ public abstract class CombatAction : ScriptableObject
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
 
-        CombatDependencies.Instance.EventsLogger.LogLocalInfo(actor, Name);
+        _combatDependencies.EventsLogger.LogLocalInfo(actor, Name);
 
         if (consumedAction == CombatActionType.MainAction)
             actor.MainActionAvailable = false;
@@ -34,9 +34,12 @@ public abstract class CombatAction : ScriptableObject
                 actor.RemoveActiveCondition(Condition.Hiding);
                 actor.MonsterAnimator.SetMonsterNormalMaterial();
                 _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
-                _combatDependencies.EventsLogger.LogLocalInfo(actor, "Stealth broken");
+                _combatDependencies.EventsLogger.LogLocalInfo(actor, "Stealth broken", LogColor.Miss);
             }
         }
+
+        if (Identifier != MonsterActionType.Move)
+            _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"{actor.Name} takes {Name} action.");
     }
     public virtual void DoAction(Monster actor, Monster target, CombatActionType consumedAction)
     {

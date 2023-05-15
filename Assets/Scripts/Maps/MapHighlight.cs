@@ -46,7 +46,7 @@ public class MapHighlight : MonoBehaviour
                 GameObject square = _cells[cell.x, cell.y];
 
                 Color color = cellColor;
-                color.a = 1f;
+                color.a = 0.25f;
                 square.GetComponent<SpriteRenderer>().color = color;
 
                 _currentlyHighlightedCells.Add(cell);
@@ -59,7 +59,7 @@ public class MapHighlight : MonoBehaviour
             GameObject square = _cells[cell.x, cell.y];
 
             Color color = cellColor;
-            color.a = 1f;
+            color.a = 0.25f;
             square.GetComponent<SpriteRenderer>().color = color;
 
             _currentlyHighlightedCells.Add(cell);

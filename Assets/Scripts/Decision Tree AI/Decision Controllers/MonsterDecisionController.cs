@@ -9,11 +9,9 @@ public class MonsterDecisionController : MonoBehaviour
 {
     protected Monster _actor;
     protected Monster _closestTarget;
-    protected List<Coords> _singleCellPathToTarget;
-    protected List<List<Coords>> _multipleCellPathToTarget;
+    protected List<Coords> _pathToTarget;
 
-    protected List<Coords> _singleCellPathToObstacle;
-    protected List<List<Coords>> _multipleCellPathToObstacle;
+    protected List<Coords> _pathToObstacle;
 
     protected GridMap _map;
     protected DTreeRoot _decisionTreeRoot;
@@ -91,15 +89,13 @@ public class MonsterDecisionController : MonoBehaviour
 
         return enemies;
     }
-    // For single-celled actors
     public Monster FindClosestEnemy(out List<Coords> pathToClosestEnemy)
     {
         Dictionary<Monster, List<Coords>> pathsToAvailableEnemies = new Dictionary<Monster, List<Coords>>();
-        Coords actorOriginCell = _actor.CurrentCoordsOriginCell;
 
         foreach (Monster enemy in _actor.VisibleTargets)
         {
-            List<Coords> pathToEnemy = _map.FindPathForSingleCellEntity(actorOriginCell, enemy.CurrentCoordsOriginCell, enemy);
+            List<Coords> pathToEnemy = _map.FindPathForMonster(self:_actor, targetCell:null, targetMonster:enemy);
 
             if (pathToEnemy != null && pathToEnemy.Count > 0)
                 pathsToAvailableEnemies.Add(enemy, pathToEnemy);
@@ -127,49 +123,13 @@ public class MonsterDecisionController : MonoBehaviour
 
         return closestEnemy;
     }
-    // For multiple-celled actors
-    public Monster FindClosestEnemy(out List<List<Coords>> pathToClosestEnemy)
-    {
-        Dictionary<Monster, List<List<Coords>>> pathsToAvailableEnemies = new Dictionary<Monster, List<List<Coords>>>();
-
-        foreach (Monster enemy in _actor.VisibleTargets)
-        {
-            List<List<Coords>> pathToEnemy = _map.FindPathToMonsterForMultipleCellEntity(_actor, enemy);
-
-            if (pathToEnemy != null)
-                pathsToAvailableEnemies.Add(enemy, pathToEnemy);
-        }
-
-        if (pathsToAvailableEnemies.Count == 0)
-        {
-            pathToClosestEnemy = null;
-            return null;
-        }
-
-        Monster closestEnemy = pathsToAvailableEnemies.First().Key;
-        pathToClosestEnemy = pathsToAvailableEnemies.First().Value;
-
-        foreach (Monster availableEnemy in pathsToAvailableEnemies.Keys)
-        {
-            List<List<Coords>> currentPath = pathsToAvailableEnemies[availableEnemy];
-
-            if (currentPath.Count < pathToClosestEnemy.Count)
-            {
-                closestEnemy = availableEnemy;
-                pathToClosestEnemy = currentPath;
-            }
-        }
-
-        return closestEnemy;
-    }
-    public List<Coords> FindSingleCellPathToClosestObstacle()
+    public List<Coords> FindPathToClosestObstacle()
     {
         List<List<Coords>> pathsToAvailableObstacles = new List<List<Coords>>();
-        Coords actorOriginCell = _actor.CurrentCoordsOriginCell;
 
         foreach (Obstacle obstacle in _actor.CombatDependencies.Map.Obstacles)
         {
-            List<Coords> pathToObstacle = _map.FindPathForSingleCellEntity(actorOriginCell, obstacle.CurrentCoords[0], obstacle);
+            List<Coords> pathToObstacle = _map.FindPathForMonster(self:_actor, targetCell:null, targetObstacle:obstacle);
 
             if (pathToObstacle != null && pathToObstacle.Count > 0)
                 pathsToAvailableObstacles.Add(pathToObstacle);
@@ -188,10 +148,6 @@ public class MonsterDecisionController : MonoBehaviour
         }
 
         return pathToClosestObstacle;
-    }
-    public List<List<Coords>> FindMultipleCellPathToClosestObstacle()
-    {
-        return null;
     }
 
     public void DoSequenceOfActionsAndEndTurn(Action monsterAction, params Action[] additionalActions)

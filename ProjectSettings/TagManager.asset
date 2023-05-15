@@ -39,6 +39,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Camera Background
+    uniqueID: 3111214257
+    locked: 0
   - name: Map
     uniqueID: 1881831063
     locked: 0

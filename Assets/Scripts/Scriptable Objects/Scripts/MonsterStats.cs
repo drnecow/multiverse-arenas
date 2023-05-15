@@ -77,13 +77,13 @@ public class MonsterStats : ScriptableObject
     {
         get { return _maxHP; }
     }
-    public int CurrentHP
+    /*public int CurrentHP
     {
         get { return _currentHP; }
         set { _currentHP = Mathf.Clamp(value, 0, _maxHP); }
-    }
+    }*/
     // This methods both validates new _maxHP value and makes _currentHP fit it if necessary
-    public void SetMaxHPProperly(int newValue)
+    /*public void SetMaxHPProperly(int newValue)
     {
         if (newValue > 0)
         {
@@ -94,8 +94,8 @@ public class MonsterStats : ScriptableObject
         }
         else
             Debug.LogWarning($"Invalid max HP value: {newValue}");
-    }
-    public void SetMaxHPAndCurrentHP(int newValue)
+    }*/
+    /*public void SetMaxHPAndCurrentHP(int newValue)
     {
         if (newValue > 0)
         {
@@ -104,7 +104,7 @@ public class MonsterStats : ScriptableObject
         }
         else
             Debug.LogWarning($"Invalid max HP value: {newValue}");
-    }
+    }*/
     public Die HitDie { get => _hitDie; set => _hitDie = value; }
     public int NumberOfHitDice
     {
@@ -235,8 +235,8 @@ public class MonsterStats : ScriptableObject
     public void RollHitPoints()
     {
         int newHitPoints = Dice.RollDice(_hitDie, _numberOfHitDice) + Abilities.GetAbilityModifier(Ability.Constitution) * _numberOfHitDice;
-
-        SetMaxHPAndCurrentHP(newHitPoints);
+        _maxHP = newHitPoints;
+        //SetMaxHPAndCurrentHP(newHitPoints);
     }
     public int GetSkillModifier(Skill skill)
     {

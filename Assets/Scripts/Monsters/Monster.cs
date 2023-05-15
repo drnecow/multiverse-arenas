@@ -27,6 +27,9 @@ public class Monster : MonoBehaviour
     {
         Stats = stats;
     }
+    private int _currentHP;
+    public int CurrentHP { get => _currentHP; set => _currentHP = Mathf.Clamp(value, 0, Stats.MaxHP); }
+
     [SerializeField] private int _numberOfAttacks;
     public int NumberOfAttacks { get => _numberOfAttacks; }
 
@@ -103,7 +106,6 @@ public class Monster : MonoBehaviour
     public SpeedValues RemainingSpeed { get; private set; }
     
     public HashSet<Monster> VisibleTargets { get; private set; }
-    
 
     public event Action<bool> OnMonsterAllegianceChanged;
     public event Action<Condition> OnActiveConditionAdded;
@@ -120,6 +122,7 @@ public class Monster : MonoBehaviour
         ActiveConditions = new HashSet<Condition>();
         VisibleTargets = new HashSet<Monster>();
 
+        CurrentHP = Stats.MaxHP;
         _remainingTotalAttacks = _numberOfAttacks;
         
         RemainingAttacks = new Dictionary<Attack, int>();
@@ -159,7 +162,7 @@ public class Monster : MonoBehaviour
     }
     public int TakeDamage(int damagePoints, DamageType damageType)
     {
-        Debug.Log($"Current HP: {Stats.CurrentHP}");
+        Debug.Log($"Current HP: {CurrentHP}");
         int totalDamageTaken = damagePoints;
 
         if (Stats.DamageImmunities.Contains(damageType))
@@ -171,26 +174,26 @@ public class Monster : MonoBehaviour
         {
             totalDamageTaken = damagePoints / 2;
             Debug.Log($"{Name} is resistant to {damageType} damage, so half damage to it: {totalDamageTaken}");
-            Stats.CurrentHP -= totalDamageTaken;
+            CurrentHP -= totalDamageTaken;
         }
         else if (Stats.DamageVulnerabilities.Contains(damageType))
         {
             totalDamageTaken = damagePoints * 2;
             Debug.Log($"{Name} is vulnerable to {damageType} damage, so double damage to it: {totalDamageTaken}");
-            Stats.CurrentHP -= totalDamageTaken;
+            CurrentHP -= totalDamageTaken;
         }
         else
         {
             Debug.Log($"{Name} takes {damagePoints} points of {damageType} damage");
-            Stats.CurrentHP -= damagePoints;
+            CurrentHP -= damagePoints;
         }
 
         if (damagePoints > 0)
-            OnMonsterHPChanged?.Invoke(Stats.CurrentHP);
+            OnMonsterHPChanged?.Invoke(CurrentHP);
 
-        if (Stats.CurrentHP == 0)
+        if (CurrentHP == 0)
             OnMonsterHPReducedToZero?.Invoke(this);
-        Debug.Log($"Current HP: {Stats.CurrentHP}");
+        Debug.Log($"Current HP: {CurrentHP}");
 
         return totalDamageTaken;
     }

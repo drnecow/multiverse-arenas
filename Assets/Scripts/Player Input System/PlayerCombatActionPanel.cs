@@ -77,68 +77,35 @@ public class PlayerCombatActionPanel : PlayerActionPanel
 
         Coords lastMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
 
-        bool isActorSingleCellSized = GridMap.IsSingleCelledSize(_actor.Stats.Size);
+        List<Coords> path = FindAndHighlightMovementPath(lastMouseCoords, map, highlight, isDash);
 
-        if (isActorSingleCellSized)
+        while (true)
         {
-            List<Coords> singleCellPath = FindAndHighlightSingleCellMovementPath(lastMouseCoords, map, highlight, isDash);
+            Coords currentMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
 
-            while (true)
+            if (currentMouseCoords != lastMouseCoords)
             {
-                Coords currentMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
-
-                if (currentMouseCoords != lastMouseCoords)
-                {
-                    singleCellPath = FindAndHighlightSingleCellMovementPath(currentMouseCoords, map, highlight, isDash);
-                }
-                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
-                {
-                    if (singleCellPath != null)
-                    {
-                        if (isDash && singleCellPath.Count <= _actor.Stats.Speed.GetSpeedCells(Speed.Walk) || !isDash && singleCellPath.Count <= _actor.RemainingSpeed.GetSpeedCells(Speed.Walk))
-                        {
-                            moveAction.DoAction(_actor, singleCellPath, _combatActionType);
-                            highlight.ClearHighlight();
-                            yield break;
-                        }
-                    }
-                }
-
-                yield return null;
+                path = FindAndHighlightMovementPath(currentMouseCoords, map, highlight, isDash);
             }
-        }
-        else
-        {
-            List<List<Coords>> multipleCellPath = FindAndHighlightMultipleCellMovementPath(lastMouseCoords, map, highlight, isDash);
-
-            while (true)
+            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
             {
-                Coords currentMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
-
-                if (currentMouseCoords != lastMouseCoords)
+                if (path != null)
                 {
-                    multipleCellPath = FindAndHighlightMultipleCellMovementPath(currentMouseCoords, map, highlight, isDash);
+                   if (isDash && path.Count <= _actor.Stats.Speed.GetSpeedCells(Speed.Walk) ||
+                        !isDash && path.Count <= _actor.RemainingSpeed.GetSpeedCells(Speed.Walk))
+                   {
+                       moveAction.DoAction(_actor, path, _combatActionType);
+                       highlight.ClearHighlight();
+                       yield break;
+                   }
                 }
-                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
-                {
-                    if (multipleCellPath != null)
-                    {
-                        if (isDash && multipleCellPath.Count <= _actor.Stats.Speed.GetSpeedCells(Speed.Walk) || !isDash && multipleCellPath.Count <= _actor.RemainingSpeed.GetSpeedCells(Speed.Walk))
-                        {
-                            moveAction.DoAction(_actor, multipleCellPath, _combatActionType);
-                            highlight.ClearHighlight();
-                            yield break;
-                        }
-                    }
-                }
-
-                yield return null;
             }
+            yield return null;
         }
     }
-    private List<Coords> FindAndHighlightSingleCellMovementPath(Coords targetCoords, GridMap map, MapHighlight highlight, bool isDash)
+    private List<Coords> FindAndHighlightMovementPath(Coords targetCoords, GridMap map, MapHighlight highlight, bool isDash)
     {
-        List<Coords> path = map.FindPathForSingleCellEntity(_actor.CurrentCoordsOriginCell, targetCoords, targetMonster:null);
+        List<Coords> path = map.FindPathForMonster(_actor, targetCoords, targetMonster:null);
 
         if (path != null)
         {
@@ -148,12 +115,20 @@ public class PlayerCombatActionPanel : PlayerActionPanel
             int remainingSpeedCells = isDash ? _actor.Stats.Speed.GetSpeedCells(Speed.Walk) : _actor.RemainingSpeed.GetSpeedCells(Speed.Walk);
 
             List<Coords> availablePathCells = path.GetRange(0, Mathf.Min(remainingSpeedCells, path.Count));
-            highlight.HighlightCells(availablePathCells, Color.green);
+            foreach (Coords availableCell in availablePathCells)
+            {
+                List<Coords> cellSpace = map.GetListOfMonsterCoords(availableCell, _actor.Stats.Size);
+                highlight.HighlightCells(cellSpace, Color.green);
+            }
 
             if (remainingSpeedCells < path.Count)
             {
                 List<Coords> unavailablePathCells = path.GetRange(remainingSpeedCells, path.Count - remainingSpeedCells);
-                highlight.HighlightCells(unavailablePathCells, Color.red);
+                foreach (Coords unavailableCell in unavailablePathCells)
+                {
+                    List<Coords> cellSpace = map.GetListOfMonsterCoords(unavailableCell, _actor.Stats.Size);
+                    highlight.HighlightCells(cellSpace, Color.red);
+                }
             }
 
             highlight.CreateMapText(path[path.Count - 1], $"{path.Count * 5} ft.");
@@ -161,11 +136,6 @@ public class PlayerCombatActionPanel : PlayerActionPanel
             return path;
         }
 
-        return null;
-    }
-    // TODO: implement
-    private List<List<Coords>> FindAndHighlightMultipleCellMovementPath(Coords targetCoords, GridMap map, MapHighlight highlight, bool isDash)
-    {
         return null;
     }
 }

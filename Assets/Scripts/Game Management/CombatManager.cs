@@ -7,16 +7,20 @@ using Project.Constants;
 
 public class CombatManager : MonoBehaviour
 {
-    [SerializeField] private GameObject _testMonsterPrefab;
-    [SerializeField] private GameObject _testMapPrefab;
+    [SerializeField] private GameObject _giantRatPrefab;
+    [SerializeField] private GameObject _mapPrefab;
 
+    [SerializeField] private CameraController _camera;
     [SerializeField] private InitiativeTracker _initiativeTracker;
     [SerializeField] private CharacterSheet _characterSheet;
     [SerializeField] private PlayerInputSystem _playerInputSystem;
+    [SerializeField] private SceneManager _sceneManager;
 
     public HashSet<Monster> AlliedMonsters { get; private set; }
     public HashSet<Monster> EnemyMonsters { get; private set; }
     private Queue<Monster> _initiativeOrder;
+    int _currentRound = 0;
+    private Monster _firstMonsterInInitiative;
     private bool _combatStopped = false;
 
     public event Action OnNewRoundStarted;
@@ -35,6 +39,9 @@ public class CombatManager : MonoBehaviour
 
         OnWinGame += () => _playerInputSystem.gameObject.SetActive(false);
         OnLoseGame += () => _playerInputSystem.gameObject.SetActive(false);
+
+        OnWinGame += () => StartCoroutine(ExitToMainMenuWithDelay());
+        OnLoseGame += () => StartCoroutine(ExitToMainMenuWithDelay());
     }
 
     private void Start()
@@ -46,22 +53,23 @@ public class CombatManager : MonoBehaviour
     private void InitializeCombat()
     {
         // Load map of player choice and set it for CombatDependencies
-        GridMap map = Instantiate(_testMapPrefab).GetComponent<GridMap>();
+        GridMap map = Instantiate(_mapPrefab).GetComponent<GridMap>();
         CombatDependencies.Instance.SetMapAndHighlight(map);
 
-
+        int allyRats = PlayerData.Instance == null ? 1 : PlayerData.Instance.AllyRats;
         // Load monsters of player choice, enemies and allies
-        for (int i = 0; i < 3; i++)
+        for (int i = map.AllyStartingPoint.y; i < map.AllyStartingPoint.y + allyRats; i++)
         {
-            GameObject allyPrefab = Instantiate(_testMonsterPrefab);
-
-            Coords allyCoords = new Coords(map.Width / 2, i);
-            allyPrefab.transform.position = map.XYToWorldPosition(allyCoords);
+            GameObject allyPrefab = Instantiate(_giantRatPrefab);
 
             Monster ally = allyPrefab.GetComponent<Monster>();
             AlliedMonsters.Add(ally);
             ally.SetCombatDependencies(CombatDependencies.Instance);
             ally.SetStats(ScriptableObject.Instantiate(ally.Stats));
+
+            Coords allyCoords = new Coords(map.AllyStartingPoint.x, i);
+            allyPrefab.transform.position = GridMap.GetCenterOfSquare(allyCoords, GridMap.GetSquareSideForEntitySize(ally.Stats.Size));
+            allyPrefab.GetComponent<SpriteRenderer>().flipX = true;
             map.PlaceMonsterOnCoords(ally, allyCoords);
 
             ally.IsPlayerControlled = true;
@@ -72,17 +80,18 @@ public class CombatManager : MonoBehaviour
         _playerInputSystem.OnPlayerEndTurn += ResolveNewTurn;
 
 
-        for (int j = 0; j < 3; j++)
+        int enemyRats = PlayerData.Instance == null ? 1 : PlayerData.Instance.EnemyRats;
+        for (int j = map.EnemyStartingPoint.y; j < map.EnemyStartingPoint.y + enemyRats; j++)
         {
-            GameObject enemyPrefab = Instantiate(_testMonsterPrefab);
+            GameObject enemyPrefab = Instantiate(_giantRatPrefab);
             enemyPrefab.GetComponent<SpriteRenderer>().color = new Color(0.5f, 0.5f, 0.5f);
-
-            Coords enemyCoords = new Coords(map.Width / 2 + 1, j);
-            enemyPrefab.transform.position = map.XYToWorldPosition(enemyCoords);
 
             Monster enemy = enemyPrefab.GetComponent<Monster>();
             EnemyMonsters.Add(enemy);
             enemy.SetCombatDependencies(CombatDependencies.Instance);
+
+            Coords enemyCoords = new Coords(map.EnemyStartingPoint.x, j);
+            enemyPrefab.transform.position = GridMap.GetCenterOfSquare(enemyCoords, GridMap.GetSquareSideForEntitySize(enemy.Stats.Size));
             map.PlaceMonsterOnCoords(enemy, enemyCoords);
 
             enemy.IsPlayerControlled = false;
@@ -122,28 +131,62 @@ public class CombatManager : MonoBehaviour
         foreach (Monster combatant in monsterInitiative.Keys)
             _initiativeOrder.Enqueue(combatant);
 
+        _firstMonsterInInitiative = _initiativeOrder.Peek();
         _initiativeTracker.SetInitiativeInfo(_initiativeOrder, this);
     }
     private void ResolveNewTurn()
     {
         if (!_combatStopped)
         {
+            EventLogsChat chat = CombatDependencies.Instance.EventsLogger.Chat;
+
             OnNewRoundStarted?.Invoke();
 
             Monster actor = _initiativeOrder.Dequeue();
+
+            if (actor == _firstMonsterInInitiative)
+            {
+                _currentRound++;
+                chat.LogRoundSeparator(_currentRound);
+            }
+
+            chat.LogMonsterNewTurn(actor);
             _characterSheet.SetPinnedMonsterAndItsInfo(actor);
             RestoreMonsterResources(actor);
 
-            if (actor.IsPlayerControlled)
-            {
-                _playerInputSystem.gameObject.SetActive(true);
-                _playerInputSystem.FillActionPanels(actor);
-            }
-            else
-                actor.GetComponent<MonsterDecisionController>().MakeDecision();
+            StartCoroutine(AnnounceMonsterTurn(actor));
 
             _initiativeOrder.Enqueue(actor);
         }
+    }
+    private IEnumerator AnnounceMonsterTurn(Monster monster)
+    {
+        _camera.FocusCameraOnMonster(monster);
+        LogColor logColor = monster.IsPlayerControlled ? LogColor.Hit : LogColor.Miss;
+        CombatDependencies.Instance.EventsLogger.LogScreenInfo($"{monster.Name}'s turn", logColor);
+
+        StartCoroutine(HighlightActiveMonster(monster));
+
+        yield return new WaitForSeconds(0.7f);
+
+        if (monster.IsPlayerControlled)
+        {
+            _playerInputSystem.gameObject.SetActive(true);
+            _playerInputSystem.FillActionPanels(monster);
+        }
+        else
+            monster.GetComponent<MonsterDecisionController>().MakeDecision();
+    }
+    private IEnumerator HighlightActiveMonster(Monster monster)
+    {
+        CombatDependencies.Instance.Highlight.HighlightCells(monster.CurrentCoords, Color.yellow);
+        yield return new WaitForSeconds(2f);
+        CombatDependencies.Instance.Highlight.ClearHighlight();
+    }
+    private IEnumerator ExitToMainMenuWithDelay()
+    {
+        yield return new WaitForSeconds(2f);
+        _sceneManager.LoadScene(Scene.MainMenu);
     }
     private void RestoreMonsterResources(Monster monster)
     {
@@ -180,6 +223,7 @@ public class CombatManager : MonoBehaviour
     {
         Debug.LogWarning($"Removing {monster} from game");
         OnMonsterRemovedFromGame?.Invoke(monster);
+        CombatDependencies.Instance.MonsterHighlighter.RemoveMonster(monster);
 
         if (monster.IsPlayerControlled)
         {
@@ -208,6 +252,20 @@ public class CombatManager : MonoBehaviour
         }
 
         _initiativeOrder = new Queue<Monster>(_initiativeOrder.Where(actor => actor != monster));
+        if (monster == _firstMonsterInInitiative)
+        {
+            List<Monster> remainingMonsters = _initiativeOrder.ToList();
+
+            int highestInitiativeRoll = -1000;
+            foreach (Monster remainingMonster in remainingMonsters)
+            {
+                if (remainingMonster.InitiativeRoll > highestInitiativeRoll)
+                {
+                    highestInitiativeRoll = remainingMonster.InitiativeRoll;
+                    _firstMonsterInInitiative = remainingMonster;
+                }
+            }
+        }
 
         monster.CombatDependencies.Map.FreeCurrentCoordsOfMonster(monster);
         monster.MonsterAnimator.KillMonster();

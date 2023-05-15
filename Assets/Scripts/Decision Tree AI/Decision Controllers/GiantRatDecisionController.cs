@@ -23,42 +23,48 @@ public class GiantRatDecisionController : MonsterDecisionController
             () => DoSequenceOfActionsAndEndTurn(
                 () => _biteAttack.MakeMeleeAttack(_actor, _actor.ConditionSourceMonsters[Condition.Grappled])));
         DTreeLeaf tryEscapeGrapple = new DTreeLeaf("Try to escape grapple",
-            () => _actor.EscapeGrapple(false));
+            () => DoSequenceOfActionsAndEndTurn(() => _actor.EscapeGrapple(false)));
 
         DTreeLeaf attackEnemyInMelee = new DTreeLeaf("Attack enemy in melee reach",
             () => DoSequenceOfActionsAndEndTurn(() => _biteAttack.MakeMeleeAttack(_actor, _closestTarget)));
 
         DTreeLeaf moveToClosestEnemyAndAttack = new DTreeLeaf("Move to closest enemy and attack it",
-            () => { Action moveAction;
-                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _singleCellPathToTarget, CombatActionType.FreeAction);
-                else
-                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _multipleCellPathToTarget, CombatActionType.FreeAction);
-
+            () => { Action moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _pathToTarget, CombatActionType.FreeAction);
                 DoSequenceOfActionsAndEndTurn(moveAction, () => _biteAttack.MakeMeleeAttack(_actor, _closestTarget));
             });
 
         DTreeLeaf moveToClosestObstacleAndHide = new DTreeLeaf("Move to closest obstacle and hide",
             () =>
             {
-                Action moveAction;
-                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _singleCellPathToObstacle, CombatActionType.FreeAction);
-                else
-                    moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _multipleCellPathToObstacle, CombatActionType.FreeAction);
-
+                Action moveAction = () => _commonActions[MonsterActionType.Move].DoAction(_actor, _pathToObstacle, CombatActionType.FreeAction);
                 DoSequenceOfActionsAndEndTurn(moveAction, () => _commonActions[MonsterActionType.Hide].DoAction(_actor, CombatActionType.MainAction));
             });
 
-        DTreeLeaf dashToClosestEnemy = new DTreeLeaf("Dash to closest enemy",
-            () => { Action dashAction;
-                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _singleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)), CombatActionType.MainAction);
-                else
-                    dashAction = () => _commonActions[MonsterActionType.Dash].DoAction(_actor, _multipleCellPathToTarget.GetRange(0, _actor.Stats.Speed.GetSpeedCells(Speed.Walk)), CombatActionType.MainAction);
+        DTreeLeaf moveAndDashToClosestEnemy = new DTreeLeaf("Move and dash to closest enemy",
+            () => {
+                Action dashAction;
+                Action moveAction;
 
-                DoSequenceOfActionsAndEndTurn(dashAction);
+                int remainingSpeedCells = _actor.RemainingSpeed.GetSpeedCells(Speed.Walk);
+
+                moveAction = () =>
+                    _commonActions[MonsterActionType.Move].DoAction(_actor, _pathToTarget.GetRange(0, remainingSpeedCells), CombatActionType.FreeAction);
+                dashAction = () =>
+                    _commonActions[MonsterActionType.Dash].
+                        DoAction(_actor,
+                                 _pathToTarget.GetRange(remainingSpeedCells,
+                                    Mathf.Min(_actor.Stats.Speed.GetSpeedCells(Speed.Walk), _pathToTarget.Count - remainingSpeedCells)),
+                                 CombatActionType.MainAction);
+
+                DoSequenceOfActionsAndEndTurn(moveAction, dashAction);
             });
+        DTreeLeaf moveToClosestEnemy = new DTreeLeaf("Move to closest enemy", () =>
+        {
+            Action moveAction = () => _commonActions[MonsterActionType.Move].
+                DoAction(_actor, _pathToTarget.GetRange(0, _actor.RemainingSpeed.GetSpeedCells(Speed.Walk)), CombatActionType.FreeAction);
+
+            DoSequenceOfActionsAndEndTurn(moveAction);
+        });
 
         DTreeLeaf takeSeekAction = new DTreeLeaf("Take Seek action",
             () => DoSequenceOfActionsAndEndTurn(() => _commonActions[MonsterActionType.Seek].DoAction(_actor, CombatActionType.MainAction)));
@@ -97,10 +103,7 @@ public class GiantRatDecisionController : MonsterDecisionController
         DTreeBinaryConditional isThereAPathToEnemyAtAll = new DTreeBinaryConditional("Is there a path to any enemy at all?", 
             () =>
             {
-                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                    _closestTarget = FindClosestEnemy(out _singleCellPathToTarget);
-                else
-                    _closestTarget = FindClosestEnemy(out _multipleCellPathToTarget);
+                _closestTarget = FindClosestEnemy(out _pathToTarget);
 
                 if (_closestTarget == null)
                     return false;
@@ -109,40 +112,34 @@ public class GiantRatDecisionController : MonsterDecisionController
             });
 
         DTreeBinaryConditional doIHaveEnoughSpeedToReachClosestEnemyThisTurn = new DTreeBinaryConditional("Do I have enough speed to reach closest enemy on this turn?",
-            () =>
-            {
-                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                    return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _singleCellPathToTarget.Count;
-                else
-                    return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _multipleCellPathToTarget.Count;
-            });
+            () => _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _pathToTarget.Count);
 
         DTreeBinaryConditional doIHaveEnoughSpeedToReachClosestObstacleThisTurn = new DTreeBinaryConditional("Do I have enough speed to reach closest obstacle on this turn?",
             () =>
             {
-                if (GridMap.IsSingleCelledSize(_actor.Stats.Size))
-                {
-                    _singleCellPathToObstacle = FindSingleCellPathToClosestObstacle();
-                    if (_singleCellPathToObstacle != null)
-                        return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _singleCellPathToObstacle.Count;
-                    else
-                        return false;
-                }
+                _pathToObstacle = FindPathToClosestObstacle();
+
+                if (_pathToObstacle != null)
+                    return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _pathToObstacle.Count;
                 else
-                {
-                    _multipleCellPathToObstacle = FindMultipleCellPathToClosestObstacle();
-                    if (_multipleCellPathToObstacle != null)
-                        return _actor.Stats.Speed.GetSpeedCells(Speed.Walk) >= _multipleCellPathToObstacle.Count;
-                    else
-                        return false;
-                }
+                    return false;
             });
 
-        doIHaveEnoughSpeedToReachClosestObstacleThisTurn.SetTrueConditionChild(moveToClosestObstacleAndHide);
-        doIHaveEnoughSpeedToReachClosestObstacleThisTurn.SetFalseConditionChild(dashToClosestEnemy);
+        DTreeRandomChoice hideOrMoveAndDashToClosestEnemy = new DTreeRandomChoice("Hide or move and dash to closest enemy (50/50)");
+
+        DTreeBinaryConditional amIHidden = new DTreeBinaryConditional("Am I hidden?", () => _actor.ActiveConditions.Contains(Condition.Hiding));
+
+        //amIHidden.SetTrueConditionChild(moveToClosestEnemy);
+        //amIHidden.SetFalseConditionChild(moveToClosestObstacleAndHide);
+
+        //hideOrMoveAndDashToClosestEnemy.AddChild(amIHidden);
+        //hideOrMoveAndDashToClosestEnemy.AddChild(moveAndDashToClosestEnemy);
+
+        //doIHaveEnoughSpeedToReachClosestObstacleThisTurn.SetTrueConditionChild(hideOrMoveAndDashToClosestEnemy);
+        //doIHaveEnoughSpeedToReachClosestObstacleThisTurn.SetFalseConditionChild(moveAndDashToClosestEnemy);
         
         doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetTrueConditionChild(moveToClosestEnemyAndAttack);
-        doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetFalseConditionChild(doIHaveEnoughSpeedToReachClosestObstacleThisTurn);
+        doIHaveEnoughSpeedToReachClosestEnemyThisTurn.SetFalseConditionChild(moveAndDashToClosestEnemy);
 
         isThereAPathToEnemyAtAll.SetTrueConditionChild(doIHaveEnoughSpeedToReachClosestEnemyThisTurn);
         isThereAPathToEnemyAtAll.SetFalseConditionChild(takeDodgeAction);

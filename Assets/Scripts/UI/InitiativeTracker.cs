@@ -61,7 +61,7 @@ public class InitiativeTracker : MonoBehaviour
                 currentCell++;
             }
             
-            Debug.Log($"Current cell: {currentCell}");
+            //Debug.Log($"Current cell: {currentCell}");
 
             if (currentCell < INITIATIVE_TRACKER_SIZE)
             {
@@ -174,6 +174,8 @@ public class InitiativeTracker : MonoBehaviour
 
         MonsterInitiativeInfo info = infoItem.GetComponent<MonsterInitiativeInfo>();
         info.SetInfo(monster);
+
+        CombatDependencies.Instance.MonsterHighlighter.AddMonsterInitiativeBlock(monster, info);
     }
     private void InsertRoundSeparator()
     {

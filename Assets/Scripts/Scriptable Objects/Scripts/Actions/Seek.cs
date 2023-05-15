@@ -37,7 +37,7 @@ public class Seek : CombatAction
                 enemy.RemoveActiveCondition(Condition.Hiding);
                 enemy.MonsterAnimator.SetMonsterNormalMaterial();
                 _combatDependencies.CombatManager.HandleMonsterBreakingStealth(actor);
-                _combatDependencies.EventsLogger.LogLocalInfo(actor, "Found");
+                _combatDependencies.EventsLogger.LogLocalInfo(enemy, "Found", LogColor.Miss);
             }
     }
 

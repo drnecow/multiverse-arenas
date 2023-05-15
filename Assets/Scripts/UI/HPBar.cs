@@ -22,7 +22,7 @@ public class HPBar : MonoBehaviour
         if (_monster != null)
         {
             _maxHP = _monster.Stats.MaxHP;
-            ChangeHPBar(_monster.Stats.CurrentHP);
+            ChangeHPBar(_monster.CurrentHP);
 
             _tooltipTarget.Enabled = true;
             _monster.OnMonsterHPChanged += ChangeHPBar;
@@ -36,7 +36,7 @@ public class HPBar : MonoBehaviour
         _maxHP = _monster.Stats.MaxHP;
 
         _tooltipTarget.Enabled = true;
-        ChangeHPBar(_monster.Stats.CurrentHP);
+        ChangeHPBar(_monster.CurrentHP);
         _monster.OnMonsterHPChanged += ChangeHPBar;
     }
     public void ChangeHPBar(int newCurrentHP)

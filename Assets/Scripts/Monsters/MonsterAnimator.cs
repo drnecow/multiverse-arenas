@@ -27,8 +27,25 @@ public class MonsterAnimator : MonoBehaviour
         SetMonsterNormalMaterial();
         _actor.gameObject.GetComponent<SpriteRenderer>().sortingLayerName = "Dead monsters";
     }
-    public void MoveMonster(List<Vector3> pathPositions, float moveSpeedPerCellInSeconds, MonsterActionType movementType)
+    public void MoveMonster(List<Coords> pathCells, float moveSpeedPerCellInSeconds, MonsterActionType movementType)
     {
+        int actorSquareSide = GridMap.GetSquareSideForEntitySize(_actor.Stats.Size);
+        List<Vector3> pathPositions = new List<Vector3>();
+
+        string pathCellsString = "";
+        foreach (Coords cell in pathCells)
+        {
+            pathPositions.Add(GridMap.GetCenterOfSquare(cell, actorSquareSide));
+            pathCellsString += $"{cell} ";
+        }
+
+        string pathPositionsString = "";
+        foreach (Vector3 position in pathPositions)
+            pathPositionsString += $"{position} ";
+
+        //Debug.Log("Path: " + pathCellsString);
+        //Debug.Log("Path positions: " + pathPositionsString);
+
         StartCoroutine(AnimateMonsterMovement(pathPositions, moveSpeedPerCellInSeconds, movementType));
     }
     public void AnimateTakingDamage()

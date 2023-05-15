@@ -29,20 +29,23 @@ public class Hide : CombatAction
         {
             actor.StealthRoll = stealthRoll;
             actor.AddActiveCondition(Condition.Hiding);
+            _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"Stealth roll {stealthRoll} > enemy passive perception: Success");
             actor.MonsterAnimator.SetMonsterStealthMaterial();
             actor.CombatDependencies.CombatManager.HandleMonsterEnteringStealth(actor);
         }
+        else
+            _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"Stealth roll {stealthRoll} <= enemy passive perception: Fail");
     }
 
     public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
     {
         GridMap map = actor.CombatDependencies.Map;
 
-        List<MultipleCellLine> neighbours = map.GetNeighboursForMultipleCellEntity(actor.CurrentCoordsOriginCell, GridMap.GetSquareSideForEntitySize(actor.Stats.Size));
+        List<Coords> neighbours = map.GetNeighbours(actor.CurrentCoordsOriginCell, actor.Stats.Size);
         bool areThereAdjacentObstacles = false;
 
-        foreach (MultipleCellLine neighbourLine in neighbours)
-            if (neighbourLine.Coords.Any(coord => map.GetGridObjectAtCoords(coord).HasImpassableObstacle))
+        foreach (Coords neighbourCoord in neighbours)
+            if (map.GetGridObjectAtCoords(neighbourCoord).HasImpassableObstacle)
                 areThereAdjacentObstacles = true;
 
         bool isUsedActionConsumed = base.CheckPlayerButtonInteractabilityCondition(actor, usedAction);

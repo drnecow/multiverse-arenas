@@ -44,6 +44,7 @@ public abstract class Attack : ScriptableObject
         }
 
         Debug.Log($"{actor.Name} is making {Name}");
+        _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"{actor.Name} attacks {target.Name} with {Name}.");
 
         //Log attack name
         _combatDependencies.EventsLogger.LogLocalInfo(actor, Name);
@@ -61,13 +62,12 @@ public abstract class Attack : ScriptableObject
 
         if (toHitRoll == 1)
         {
-            // Log critical miss
-            // TODO: play target dodging animation
+            _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"1: Critical Miss");
             target.MonsterAnimator.AnimateAvoidingDamage(actor);
         }
         else if (toHitRoll == 20)
         {
-            // Log critical hit
+            _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"20: Critical Hit!");
             target.MonsterAnimator.AnimateTakingDamage();
             RollAndLogAttackDamage(actor, target, true);
         }
@@ -78,15 +78,13 @@ public abstract class Attack : ScriptableObject
 
             if (toHitNumber >= target.Stats.ArmorClass)
             {
-                // Log hit
-                // TODO: play target taking damage animation
+                _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"{toHitRoll}+{attackAbilityModifier}+{actor.Stats.ProficiencyBonus} >= {target.Stats.ArmorClass}: Hit");
                 target.MonsterAnimator.AnimateTakingDamage();
                 RollAndLogAttackDamage(actor, target, false);
             }
             else
             {
-                // Log miss
-                // TODO: play target dodging animation
+                _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"{toHitRoll}+{attackAbilityModifier}+{actor.Stats.ProficiencyBonus} < {target.Stats.ArmorClass}: Miss");
                 target.MonsterAnimator.AnimateAvoidingDamage(actor);
             }
         }
@@ -131,9 +129,13 @@ public abstract class Attack : ScriptableObject
                 actorSpriteRenderer.flipX = true;
 
             if (yOffset > 0)
+            //{
                 clipName = $"{StringIdentifier}DiagonalDown";
+            //}
             else
+            //{
                 clipName = $"{StringIdentifier}DiagonalUp";
+            //}
         }
 
         float clipLength = FindAnimationClipLength(actor.Animator.runtimeAnimatorController, clipName);
@@ -163,8 +165,8 @@ public abstract class Attack : ScriptableObject
         int damageToTarget = target.TakeDamage(initialDamage, InitialDamageInfo.DamageType);
 
         //If it's crit, log critical damage; else, log normal damage
-        _combatDependencies.EventsLogger.LogDamageNumber(target, damageToTarget);
-        // TODO: play target taking damage animation
+        _combatDependencies.EventsLogger.LogDamageNumber(target, damageToTarget, isCrit);
+        _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"{target.Name} takes {damageToTarget} points of {InitialDamageInfo.DamageType} damage.");
 
         if (AdditionalDamageInfo.Count > 1)
         {
@@ -173,9 +175,13 @@ public abstract class Attack : ScriptableObject
                 int damage = Dice.RollDice(damageInfo.DamageDie, damageInfo.NumberOfDamageDice * (isCrit ? 2 : 1));
                 damageToTarget = target.TakeDamage(damage, damageInfo.DamageType);
                 //If it's crit, log critical damage; else, log normal damage
-                _combatDependencies.EventsLogger.LogDamageNumber(target, damageToTarget);
+                _combatDependencies.EventsLogger.LogDamageNumber(target, damageToTarget, isCrit);
+                _combatDependencies.EventsLogger.Chat.LogEvent(actor, $"{target.Name} takes {damageToTarget} points of {damageInfo.DamageType} damage.");
             }
         }
+
+        if (target.CurrentHP == 0)
+            CombatDependencies.Instance.EventsLogger.Chat.LogEvent(target, $"{target.Name} dies.");
     }
     private float FindAnimationClipLength(RuntimeAnimatorController actorAnimatorController, string clipName)
     {

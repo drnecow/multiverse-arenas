@@ -11,6 +11,9 @@ public class MonsterInitiativeInfo : MonoBehaviour, IPointerEnterHandler, IPoint
     public Monster Monster { get => _monster; }
     private int _initiativeNumber;
 
+    private Image _blockImage;
+    private Color _blockColor;
+
     [SerializeField] private HPBar _hpBar;
 
     [SerializeField] private Image _spriteElement;
@@ -21,6 +24,9 @@ public class MonsterInitiativeInfo : MonoBehaviour, IPointerEnterHandler, IPoint
     {
         _monster = monster;
         _initiativeNumber = _monster.InitiativeRoll;
+
+        _blockImage = GetComponent<Image>();
+        _blockColor = _blockImage.color;
 
         _hpBar.SetMonster(_monster);
 
@@ -38,5 +44,14 @@ public class MonsterInitiativeInfo : MonoBehaviour, IPointerEnterHandler, IPoint
     {
         MapHighlight highlight = _monster.CombatDependencies.Highlight;
         highlight.ClearHighlight();
+    }
+
+    public void HighlightBlock()
+    {
+        _blockImage.color = Color.yellow;
+    }
+    public void ClearBlockHighlight()
+    {
+        _blockImage.color = _blockColor;
     }
 }
