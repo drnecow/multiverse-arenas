@@ -4,12 +4,27 @@ using System.Collections.Generic;
 using UnityEngine;
 using Project.Constants;
 
+public class ActionAnimationStartArguments
+{
+    public Action InvokeAnimationEndEvent { get; private set; }
+    public Monster Actor { get; private set; }
+    public float AnimationDurationInSeconds { get; private set; }
+
+    public ActionAnimationStartArguments(Action invokeAnimationEndEvent, Monster actor, float animationDurationInSeconds)
+    {
+        InvokeAnimationEndEvent = invokeAnimationEndEvent;
+        Actor = actor;
+        AnimationDurationInSeconds = animationDurationInSeconds;
+    }
+}
+
 public abstract class CombatAction : ScriptableObject
 {
     [field: SerializeField] public string Name { get; set; }
     [field: SerializeField] public MonsterActionType Identifier { get; protected set; }
 
-    public event Action<Monster, float> OnActionAnimationStartedPlaying;
+    public event Action<ActionAnimationStartArguments> OnActionAnimationStartedPlaying;
+    public event Action OnActionAnimationStoppedPlaying;
 
 
     protected CombatDependencies _combatDependencies;
@@ -20,6 +35,8 @@ public abstract class CombatAction : ScriptableObject
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
 
+        Debug.Log($"MonsterActionTracker: {_combatDependencies.MonsterActionTracker}");
+        _combatDependencies.MonsterActionTracker.AddCombatAction(this);
         _combatDependencies.EventsLogger.LogLocalInfo(actor, Name);
 
         if (consumedAction == CombatActionType.MainAction)
@@ -76,8 +93,13 @@ public abstract class CombatAction : ScriptableObject
         };
     }
 
-    protected void OnActionAnimationStartedPlayingInvoke(Monster actor, float animationDuration)
+    protected void InvokeOnActionAnimationStartedPlaying(Monster actor, float animationDuration)
     {
-        OnActionAnimationStartedPlaying?.Invoke(actor, animationDuration);
+        ActionAnimationStartArguments actionArguments = new ActionAnimationStartArguments(InvokeOnActionAnimationStoppedPlaying, actor, animationDuration);
+        OnActionAnimationStartedPlaying?.Invoke(actionArguments);
+    }
+    public void InvokeOnActionAnimationStoppedPlaying()
+    {
+        OnActionAnimationStoppedPlaying?.Invoke();
     }
 }

@@ -39,7 +39,7 @@ public class MonsterDecisionController : MonoBehaviour
         };
 
         foreach (CombatAction commonAction in _commonActions.Values)
-            commonAction.OnActionAnimationStartedPlaying += SwitchToCurrentAnimationClip;
+            commonAction.OnActionAnimationStartedPlaying += (actionArguments) => SwitchToCurrentAnimationClip(actionArguments.Actor, actionArguments.AnimationDurationInSeconds);
 
         OnEnemyEndTurn += () => Debug.Log($"{_actor} ended turn");
         OnEnemyEndTurn += () => _actor.RemoveActiveCondition(Condition.Disengaging);

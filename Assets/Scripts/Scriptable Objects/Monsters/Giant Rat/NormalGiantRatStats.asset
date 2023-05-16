@@ -36,7 +36,7 @@ MonoBehaviour:
   _creatureType: 2
   _size: 2
   _challengeRating: 0.125
-  _naturalArmorBonus: 0
+  _naturalArmorBonus: 20
   _maxHP: 7
   _currentHP: 7
   _hitDie: 6

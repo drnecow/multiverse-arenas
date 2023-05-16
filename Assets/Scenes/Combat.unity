@@ -1388,6 +1388,7 @@ GameObject:
   - component: {fileID: 669155037}
   - component: {fileID: 669155038}
   - component: {fileID: 669155039}
+  - component: {fileID: 669155040}
   m_Layer: 0
   m_Name: Combat Dependencies
   m_TagString: Untagged
@@ -1475,6 +1476,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eb9d1a22da9675d47a492a55d60558f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &669155040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 669155034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71b4a0e8b3c2ddb4fb856254907a6602, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &737052722 stripped

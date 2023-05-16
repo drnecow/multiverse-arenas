@@ -6,7 +6,7 @@ AnimationClip:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GiantRatDodgeBack
+  m_Name: GiantRatAttackRight
   serializedVersion: 6
   m_Legacy: 0
   m_Compressed: 0
@@ -20,7 +20,7 @@ AnimationClip:
   m_PPtrCurves:
   - curve:
     - time: 0
-      value: {fileID: 3855315532848894641, guid: 80b507c828f15c148adbd37c2ee24f9f, type: 3}
+      value: {fileID: -5412190642807425305, guid: 46f4618760412ab4c9615507a1b11325, type: 3}
     attribute: m_Sprite
     path: 
     classID: 212
@@ -40,7 +40,7 @@ AnimationClip:
       customType: 23
       isPPtrCurve: 1
     pptrCurveMapping:
-    - {fileID: 3855315532848894641, guid: 80b507c828f15c148adbd37c2ee24f9f, type: 3}
+    - {fileID: -5412190642807425305, guid: 46f4618760412ab4c9615507a1b11325, type: 3}
   m_AnimationClipSettings:
     serializedVersion: 2
     m_AdditiveReferencePoseClip: {fileID: 0}

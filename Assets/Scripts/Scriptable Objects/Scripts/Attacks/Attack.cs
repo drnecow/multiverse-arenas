@@ -17,13 +17,13 @@ public abstract class Attack : ScriptableObject
 {
     [field: SerializeField] public string Name { get; protected set; }
     [field: SerializeField] public AttackType Identifier { get; protected set; }
-    [field: SerializeField] public string StringIdentifier { get; protected set; }
     [field: SerializeField] public Ability UsedAbility { get; protected set; }
     [field: SerializeField] public AttackDamageInfo InitialDamageInfo { get; protected set; }
     [field: SerializeField] public bool IsAbilityModifierAdded { get; protected set; }
     [field: SerializeField] public List<AttackDamageInfo> AdditionalDamageInfo { get; protected set; }
 
-    public event Action<Monster, float> OnAttackAnimationStartedPlaying;
+    public event Action<ActionAnimationStartArguments> OnAttackAnimationStartedPlaying;
+    public event Action OnAttackAnimationStoppedPlaying;
 
 
     protected CombatDependencies _combatDependencies;
@@ -33,6 +33,8 @@ public abstract class Attack : ScriptableObject
     {
         if (_combatDependencies == null)
             _combatDependencies = CombatDependencies.Instance;
+
+        _combatDependencies.MonsterActionTracker.AddAttack(this);
 
         if (actor.ActiveConditions.Contains(Condition.Hiding))
         {
@@ -56,7 +58,8 @@ public abstract class Attack : ScriptableObject
 
         //Play attack animation
         float animationClipLength = PlayAttackAnimation(actor, target);
-        OnAttackAnimationStartedPlaying.Invoke(actor, animationClipLength);
+        ActionAnimationStartArguments animationStartArguments = new ActionAnimationStartArguments(InvokeOnAttackAnimationStoppedPlaying, actor, animationClipLength);
+        OnAttackAnimationStartedPlaying.Invoke(animationStartArguments);
 
         int toHitRoll = Dice.RollD20(1, rollMode);
 
@@ -96,51 +99,30 @@ public abstract class Attack : ScriptableObject
         Coords targetOriginCell = target.CurrentCoordsOriginCell;
 
         Coords targetOffsetFromActor = new Coords(targetOriginCell.x - actorOriginCell.x, targetOriginCell.y - actorOriginCell.y);
-        int actorSquareSize = GridMap.GetSquareSideForEntitySize(actor.Stats.Size);
 
         int xOffset = targetOffsetFromActor.x;
-        int yOffset = targetOffsetFromActor.y;
-
-        //Debug.Log($"Target offset from actor: ({xOffset}, {yOffset})");
+        int yOffset = -targetOffsetFromActor.y;
 
         SpriteRenderer actorSpriteRenderer = actor.gameObject.GetComponent<SpriteRenderer>();
-        string clipName = "";
-
-        // Conditions for front/back attack
-        if (yOffset >= 0 && yOffset < actorSquareSize)
-        {
-            if (xOffset > 0)
-                actorSpriteRenderer.flipX = true;
-
-            clipName = $"{StringIdentifier}Front";
-        }
-        // Conditions for up/down attack
-        else if (xOffset >= 0 && xOffset < actorSquareSize)
-        {
-            if (yOffset > 0)
-                clipName = $"{StringIdentifier}Down";
-            else
-                clipName = $"{StringIdentifier}Up";
-        }
-        // Conditions for diagonal up/diagonal down attack
+        if (xOffset > 0)
+            actorSpriteRenderer.flipX = true;
         else
-        {
-            if (xOffset > 0)
-                actorSpriteRenderer.flipX = true;
+            actorSpriteRenderer.flipX = false;
 
-            if (yOffset > 0)
-            //{
-                clipName = $"{StringIdentifier}DiagonalDown";
-            //}
-            else
-            //{
-                clipName = $"{StringIdentifier}DiagonalUp";
-            //}
-        }
+        if (xOffset != 0)
+            xOffset /= Mathf.Abs(xOffset);
+        if (yOffset != 0)
+            yOffset /= Mathf.Abs(yOffset);
 
+        Debug.Log($"Target offset from actor: ({xOffset}, {yOffset})");
+
+        string clipName = $"{Name}Attack";
         float clipLength = FindAnimationClipLength(actor.Animator.runtimeAnimatorController, clipName);
 
         actor.Animator.SetTrigger(clipName);
+        actor.Animator.SetFloat($"{Name}AttackTargetXOffset", xOffset);
+        actor.Animator.SetFloat($"{Name}AttackTargetYOffset", yOffset);
+     
         return clipLength;
     }
     public static int GetDamageDiceBonusForSize(Size size)
@@ -190,5 +172,10 @@ public abstract class Attack : ScriptableObject
                 return clip.length;
 
         return 0;
+    }
+
+    public void InvokeOnAttackAnimationStoppedPlaying()
+    {
+        OnAttackAnimationStoppedPlaying?.Invoke();
     }
 }

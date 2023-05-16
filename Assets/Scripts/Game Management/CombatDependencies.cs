@@ -9,6 +9,7 @@ public class CombatDependencies : MonoBehaviour
     public GridMap Map { get; private set; }
     public MapHighlight Highlight { get; private set; }
     public MonsterHighlighter MonsterHighlighter { get; private set; }
+    public MonsterActionTracker MonsterActionTracker { get; private set; }
     public CombatEventsLogger EventsLogger { get; private set; }
     public CombatManager CombatManager { get; private set; }
 
@@ -24,11 +25,12 @@ public class CombatDependencies : MonoBehaviour
             Instance = this;
 
         MonsterHighlighter = gameObject.GetComponent<MonsterHighlighter>();
+        MonsterActionTracker = gameObject.GetComponent<MonsterActionTracker>();
         EventsLogger = gameObject.GetComponent<CombatEventsLogger>();
-        //CombatManager = gameObject.GetComponent<CombatManager>();
+        CombatManager = gameObject.GetComponent<CombatManager>();
 
-        //CombatManager.OnWinGame += () => EventsLogger.LogScreenInfo("You win", LogColor.Hit);
-        //CombatManager.OnLoseGame += () => EventsLogger.LogScreenInfo("You lose", LogColor.Miss);
+        CombatManager.OnWinGame += () => EventsLogger.LogScreenInfo("You win", LogColor.Hit);
+        CombatManager.OnLoseGame += () => EventsLogger.LogScreenInfo("You lose", LogColor.Miss);
     }
 
     public void SetMapAndHighlight(GridMap map)

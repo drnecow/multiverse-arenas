@@ -33,7 +33,9 @@ public class PlayerAttackPanel : PlayerActionPanel
             attackTooltipTarget.Enabled = true;
 
             Button attackButton = _actionSlots[i].GetComponent<Button>();
-            attackButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight(); _parentInputSystem.InterruptCurrentCoroutines(); });
+            attackButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight();
+                _parentInputSystem.SuspendCapturingMovement();
+                _parentInputSystem.InterruptCurrentCoroutines(); });
 
             if (attack is MeleeAttack)
                 attackButton.onClick.AddListener(() => StartCoroutine(HighlightPossibleTargetsOfMeleeAttack(attack as MeleeAttack)));

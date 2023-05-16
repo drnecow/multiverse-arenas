@@ -18,8 +18,10 @@ public class Seek : CombatAction
         base.DoAction(actor, consumedAction);      
 
         Debug.Log($"{actor.Name} is Seeking");
-        OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
+        InvokeOnActionAnimationStartedPlaying(actor, ConstantValues.ZERO_TIME_ANIMATIONS_DURATION);
 
+        Debug.Log(actor);
+        Debug.Log(_combatDependencies.CombatManager);
         HashSet<Monster> enemies = actor.IsPlayerControlled ? _combatDependencies.CombatManager.EnemyMonsters : _combatDependencies.CombatManager.AlliedMonsters;
         List<Monster> hiddenEnemies = enemies.Where(enemy => enemy.ActiveConditions.Contains(Condition.Hiding)).ToList();
 

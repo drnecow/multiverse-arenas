@@ -6,8 +6,6 @@ using Project.Constants;
 [CreateAssetMenu(fileName = "Disengage", menuName = "Scriptable Objects/Common Action/Disengage")]
 public class Disengage : CombatAction
 {
-    // TODO: add removal of Disengage at the end of turn for player-controlled monsters
-
     private void Awake()
     {
         Name = "Disengage";
@@ -21,7 +19,7 @@ public class Disengage : CombatAction
         Debug.Log($"{actor.Name} is Disengaging");
 
         actor.AddActiveCondition(Condition.Disengaging);
-        OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
+        InvokeOnActionAnimationStartedPlaying(actor, ConstantValues.ZERO_TIME_ANIMATIONS_DURATION);
     }
 
     public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)

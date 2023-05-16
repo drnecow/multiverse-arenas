@@ -13,7 +13,8 @@ public class PlayerInputSystem : MonoBehaviour
     private Monster _actor;
     private Move _moveAction;
     private bool _subscribedToMove = false;
-    private bool _movementHighlightInterrupted = false;
+    private bool _movementInterrupted = false;
+    private bool _movementHighlightActive = true;
 
     [SerializeField] private PlayerCombatActionPanel _mainActionsPanel;
     [SerializeField] private PlayerAttackPanel _attacksPanel;
@@ -45,10 +46,10 @@ public class PlayerInputSystem : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.LeftControl)) {
-            _movementHighlightInterrupted = !_movementHighlightInterrupted;
+            _movementHighlightActive = !_movementHighlightActive;
             
-            if (_movementHighlightInterrupted)
-                _actor.CombatDependencies.Highlight.ClearHighlight();
+            if (!_movementHighlightActive)
+               _actor.CombatDependencies.Highlight.ClearHighlight();
         }
     }
     public void FillActionPanels(Monster actor)
@@ -58,13 +59,14 @@ public class PlayerInputSystem : MonoBehaviour
 
         if (!_subscribedToMove)
         {
-            _moveAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) InterruptCurrentCoroutines(); };
-            _moveAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
+            _moveAction.OnActionAnimationStartedPlaying += (actionArguments) => { if (gameObject.activeSelf) InterruptCurrentCoroutines(); };
+            _moveAction.OnActionAnimationStartedPlaying += (actionArguments) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(actionArguments.AnimationDurationInSeconds)); };
+            
+            _moveAction.OnActionAnimationStartedPlaying += (actionArguments) => SuspendCapturingMovement();
+            _moveAction.OnActionAnimationStoppedPlaying += ResumeCapturingMovement;
 
             _subscribedToMove = true;
         }
-
-        _movementHighlightInterrupted = true;
 
         List<CombatAction> freeActions = _actor.CombatActions.FreeActions.Where(freeAction => freeAction.Identifier != MonsterActionType.Move).ToList();
         MeleeAttackIntDictionary meleeAttacks = _actor.CombatActions.MeleeAttacks;
@@ -80,7 +82,8 @@ public class PlayerInputSystem : MonoBehaviour
 
             foreach (CombatAction freeAction in freeActions)
             {
-                freeAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
+                freeAction.OnActionAnimationStartedPlaying += (actionArguments) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(actionArguments.AnimationDurationInSeconds)); };
+                freeAction.OnActionAnimationStoppedPlaying += ResumeCapturingMovement;
             }
         }
         else
@@ -101,7 +104,8 @@ public class PlayerInputSystem : MonoBehaviour
 
             foreach (Attack attack in combinedAttacks.Keys)
             {
-                attack.OnAttackAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
+                attack.OnAttackAnimationStartedPlaying += (actionArguments) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(actionArguments.AnimationDurationInSeconds)); };
+                attack.OnAttackAnimationStoppedPlaying += ResumeCapturingMovement;
             }
         }
         else
@@ -115,7 +119,8 @@ public class PlayerInputSystem : MonoBehaviour
 
             foreach (CombatAction mainAction in mainActions)
             {
-                mainAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
+                mainAction.OnActionAnimationStartedPlaying += (actionArguments) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(actionArguments.AnimationDurationInSeconds)); };
+                mainAction.OnActionAnimationStoppedPlaying += ResumeCapturingMovement;
             }
         }
         else
@@ -129,7 +134,8 @@ public class PlayerInputSystem : MonoBehaviour
 
             foreach (CombatAction bonusAction in bonusActions)
             {
-                bonusAction.OnActionAnimationStartedPlaying += (monster, animationDuration) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(animationDuration)); };
+                bonusAction.OnActionAnimationStartedPlaying += (actionArguments) => { if (gameObject.activeSelf) StartCoroutine(SuspendButtonsAvailabilityFor(actionArguments.AnimationDurationInSeconds)); };
+                bonusAction.OnActionAnimationStoppedPlaying += ResumeCapturingMovement;
             }
         }
         else
@@ -159,14 +165,20 @@ public class PlayerInputSystem : MonoBehaviour
             panel.SetAllButtonsInteractabilityByCondition();
         _endTurnButton.interactable = true;
     }
+    public void SuspendCapturingMovement()
+    {
+        _movementInterrupted = true;
+    }
+    public void ResumeCapturingMovement()
+    {
+        _movementInterrupted = false;
+    }
     public void InterruptCurrentCoroutines()
     {
         List<PlayerActionPanel> activePanels = GetAllActiveActionPanels();
 
         foreach (PlayerActionPanel panel in activePanels)
             panel.StopAllCoroutines();
-
-        _movementHighlightInterrupted = true;
     }
     private List<PlayerActionPanel> GetAllActiveActionPanels()
     {
@@ -200,23 +212,23 @@ public class PlayerInputSystem : MonoBehaviour
 
         while (true)
         {
-            Coords currentMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
+            if (!_movementInterrupted)
+            {
+                Coords currentMouseCoords = map.WorldPositionToXY(Utils.GetMouseWorldPosition());
 
-            if (currentMouseCoords != lastMouseCoords)
-            {
-                path = FindAndHighlightMovementPath(currentMouseCoords, map, highlight);
-            }
-            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
-            {
-                if (path != null)
+                if (currentMouseCoords != lastMouseCoords)
                 {
-                    if (path.Count <= _actor.RemainingSpeed.GetSpeedCells(Speed.Walk))
+                    path = FindAndHighlightMovementPath(currentMouseCoords, map, highlight);
+                }
+                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
+                {
+                    if (path != null)
                     {
-                        _moveAction.DoAction(_actor, path, CombatActionType.FreeAction);
-                        highlight.ClearHighlight();
-
-                        if (_actor.RemainingSpeed.GetSpeedCells(Speed.Walk) == 0)
-                            yield break;
+                        if (path.Count <= _actor.RemainingSpeed.GetSpeedCells(Speed.Walk))
+                        {
+                            _moveAction.DoAction(_actor, path, CombatActionType.FreeAction);
+                            highlight.ClearHighlight();
+                        }
                     }
                 }
             }
@@ -229,30 +241,32 @@ public class PlayerInputSystem : MonoBehaviour
 
         if (path != null)
         {
-            highlight.ClearHighlight();
-            highlight.HighlightCells(_actor.CurrentCoords, Color.grey);
-
-            int remainingSpeedCells = _actor.RemainingSpeed.GetSpeedCells(Speed.Walk);
-
-            List<Coords> availablePathCells = path.GetRange(0, Mathf.Min(remainingSpeedCells, path.Count));
-            foreach (Coords availableCell in availablePathCells)
+            if (_movementHighlightActive)
             {
-                List<Coords> cellSpace = map.GetListOfMonsterCoords(availableCell, _actor.Stats.Size);
-                highlight.HighlightCells(cellSpace, Color.green);
-            }
+                highlight.ClearHighlight();
+                highlight.HighlightCells(_actor.CurrentCoords, Color.grey);
 
-            if (remainingSpeedCells < path.Count)
-            {
-                List<Coords> unavailablePathCells = path.GetRange(remainingSpeedCells, path.Count - remainingSpeedCells);
-                foreach (Coords unavailableCell in unavailablePathCells)
+                int remainingSpeedCells = _actor.RemainingSpeed.GetSpeedCells(Speed.Walk);
+
+                List<Coords> availablePathCells = path.GetRange(0, Mathf.Min(remainingSpeedCells, path.Count));
+                foreach (Coords availableCell in availablePathCells)
                 {
-                    List<Coords> cellSpace = map.GetListOfMonsterCoords(unavailableCell, _actor.Stats.Size);
-                    highlight.HighlightCells(cellSpace, Color.red);
+                    List<Coords> cellSpace = map.GetListOfMonsterCoords(availableCell, _actor.Stats.Size);
+                    highlight.HighlightCells(cellSpace, Color.green);
                 }
+
+                if (remainingSpeedCells < path.Count)
+                {
+                    List<Coords> unavailablePathCells = path.GetRange(remainingSpeedCells, path.Count - remainingSpeedCells);
+                    foreach (Coords unavailableCell in unavailablePathCells)
+                    {
+                        List<Coords> cellSpace = map.GetListOfMonsterCoords(unavailableCell, _actor.Stats.Size);
+                        highlight.HighlightCells(cellSpace, Color.red);
+                    }
+                }
+
+                highlight.CreateMapText(path[path.Count - 1], $"{path.Count * 5} ft.");
             }
-
-            highlight.CreateMapText(path[path.Count - 1], $"{path.Count * 5} ft.");
-
             return path;
         }
 

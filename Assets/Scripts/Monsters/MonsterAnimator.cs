@@ -58,44 +58,24 @@ public class MonsterAnimator : MonoBehaviour
         Coords targetOriginCell = _actor.CurrentCoordsOriginCell;
 
         Coords targetOffsetFromAttacker = new Coords(targetOriginCell.x - attackerOriginCell.x, targetOriginCell.y - attackerOriginCell.y);
-        int attackerSquareSize = GridMap.GetSquareSideForEntitySize(attacker.Stats.Size);
 
         int xOffset = targetOffsetFromAttacker.x;
-        int yOffset = targetOffsetFromAttacker.y;
+        int yOffset = -targetOffsetFromAttacker.y;
 
         SpriteRenderer targetSpriteRenderer = _actor.gameObject.GetComponent<SpriteRenderer>();
-        string clipName = "";
-
-        // Conditions for front/back attack
-        if (yOffset >= 0 && yOffset < attackerSquareSize)
-        {
-            if (xOffset < 0)
-                targetSpriteRenderer.flipX = true;
-
-            clipName = "DodgeBack";
-        }
-        // Conditions for up/down attack
-        else if (xOffset >= 0 && xOffset < attackerSquareSize)
-        {
-            if (yOffset > 0)
-                clipName = "DodgeDown";
-            else
-                clipName = $"DodgeUp";
-        }
-        // Conditions for diagonal up/diagonal down attack
+        if (xOffset < 0)
+            targetSpriteRenderer.flipX = true;
         else
-        {
-            if (xOffset < 0)
-                targetSpriteRenderer.flipX = true;
+            targetSpriteRenderer.flipX = false;
 
-            if (yOffset > 0)
-                clipName = $"DodgeDiagonalDown";
-            else
-                clipName = $"DodgeDiagonalUp";
-        }
-        Debug.Log("Avoiding damage");
-        Debug.Log("Clip name: " + clipName);
-        _actor.Animator.SetTrigger(clipName);
+        if (xOffset != 0)
+            xOffset /= Mathf.Abs(xOffset);
+        if (yOffset != 0)
+            yOffset /= Mathf.Abs(yOffset);
+
+        _actor.Animator.SetTrigger("Dodge");
+        _actor.Animator.SetFloat("DodgeXOffset", xOffset);
+        _actor.Animator.SetFloat("DodgeYOffset", yOffset);
     }
     private IEnumerator AnimateMonsterMovement(List<Vector3> pathPositions, float moveSpeedPerCellInSeconds, MonsterActionType movementType)
     {

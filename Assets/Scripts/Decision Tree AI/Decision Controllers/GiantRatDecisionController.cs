@@ -14,7 +14,7 @@ public class GiantRatDecisionController : MonsterDecisionController
     {
         base.Awake();
         _biteAttack = _actor.CombatActions.FindMeleeAttackOfType(AttackType.BiteAttack);
-        _biteAttack.OnAttackAnimationStartedPlaying += SwitchToCurrentAnimationClip;
+        _biteAttack.OnAttackAnimationStartedPlaying += (attackArguments) => SwitchToCurrentAnimationClip(attackArguments.Actor, attackArguments.AnimationDurationInSeconds);
     }
 
     public override void BuildDecisionTree()

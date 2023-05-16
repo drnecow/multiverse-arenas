@@ -28,10 +28,13 @@ public class Move : CombatAction
         else if (endPathCell.x > initialCell.x)
             actorSpriteRenderer.flipX = true;
 
+        if (Identifier == MonsterActionType.Move)
+            actor.RemainingSpeed.Walk -= path.Count * 5;
+
         path.Insert(0, initialCell);
 
         float animationDuration = path.Count * _speedPerCellInSeconds;
-        OnActionAnimationStartedPlayingInvoke(actor, animationDuration + ConstantValues.ANIMATIONS_SWITCH_SPEED);
+        InvokeOnActionAnimationStartedPlaying(actor, animationDuration + ConstantValues.ANIMATIONS_SWITCH_SPEED);
 
         _combatDependencies.Map.FreeCurrentCoordsOfMonster(actor);
 
@@ -39,10 +42,6 @@ public class Move : CombatAction
         actor.MonsterAnimator.MoveMonster(path, _speedPerCellInSeconds, MonsterActionType.Move);
 
         _combatDependencies.Map.PlaceMonsterOnCoords(actor, endPathCell);
-
-        if (Identifier == MonsterActionType.Move)
-            actor.RemainingSpeed.Walk -= path.Count * 5;
-
 
         string pathString = "";
 

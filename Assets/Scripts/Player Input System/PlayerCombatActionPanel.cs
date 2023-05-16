@@ -35,7 +35,9 @@ public class PlayerCombatActionPanel : PlayerActionPanel
             combatActionTooltipTarget.Enabled = true;
 
             Button combatActionButton = _actionSlots[i].GetComponent<Button>();
-            combatActionButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight(); _parentInputSystem.InterruptCurrentCoroutines(); });
+            combatActionButton.onClick.AddListener(() => { _actor.CombatDependencies.Highlight.ClearHighlight();
+                _parentInputSystem.SuspendCapturingMovement();
+                _parentInputSystem.InterruptCurrentCoroutines(); });
             combatActionButton.onClick.AddListener(() => GetButtonAction(combatAction)());
 
             combatActionButton.enabled = true;

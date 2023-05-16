@@ -159,6 +159,7 @@ namespace Project.Constants
     public static class ConstantValues
     {
         public const float ANIMATIONS_SWITCH_SPEED = 0.8f;
+        public const float ZERO_TIME_ANIMATIONS_DURATION = 0F;
 
         public const float MAP_CELL_SIZE = 10f;
 

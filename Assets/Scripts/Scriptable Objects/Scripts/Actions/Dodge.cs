@@ -19,7 +19,7 @@ public class Dodge : CombatAction
         Debug.Log($"{actor.Name} is Dodging");
 
         actor.AddActiveCondition(Condition.Dodging);
-        OnActionAnimationStartedPlayingInvoke(actor, 0.5f);
+        InvokeOnActionAnimationStartedPlaying(actor, ConstantValues.ZERO_TIME_ANIMATIONS_DURATION);
     }
 
     public override bool CheckPlayerButtonInteractabilityCondition(Monster actor, CombatActionType usedAction)
